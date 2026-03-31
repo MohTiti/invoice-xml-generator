@@ -9,6 +9,6 @@ import java.io.IOException;
 
 public interface XMLGenerationService {
 
-    String generateXML(InvoiceDTO invoiceDTO, String requestFrom ) throws IOException, TemplateException;
+    String generateXML(InvoiceDTO invoiceDTO, String requestFrom, LuInvoiceTypeDTO luInvoiceTypeDTO) throws IOException, TemplateException;
 
 }

@@ -4,6 +4,7 @@ import com.xml.generation.test.invoice_xml_generator_test.converter.InvoiceRever
 import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import com.xml.generation.test.invoice_xml_generator_test.model.dto.InvoiceDTO;
 //import com.xml.generation.test.invoice_xml_generator_test.model.dto.LuInvoiceTypeDTO;
+import com.xml.generation.test.invoice_xml_generator_test.model.dto.LuInvoiceTypeDTO;
 import com.xml.generation.test.invoice_xml_generator_test.model.entity.Invoice;
 import com.xml.generation.test.invoice_xml_generator_test.model.enums.RequestFromEnum;
 import com.xml.generation.test.invoice_xml_generator_test.model.lookup.Lu_InvoiceType;
@@ -46,15 +47,15 @@ public class XmlRegenerationService {
                 "Regenerating XML for invoiceId={}", invoice.getId());
 
         // ── 1. Fetch LuInvoiceType ─────────────────────────────────────────
-//        Lu_InvoiceType luInvoiceType = LookupFacade.getInvoiceType(invoice.getInvoiceKind());
-//        LuInvoiceTypeDTO luInvoiceTypeDTO = new LuInvoiceTypeDTO(
-//                luInvoiceType.getCode(),
-//                luInvoiceType.getArabicDescription(),
-//                luInvoiceType.getEnglishDescription(),
-//                luInvoiceType.getXmlDigitReference(),
-//                luInvoiceType.getAllowedPercentage(),
-//                luInvoiceType.getEnabled()
-//        );
+        Lu_InvoiceType luInvoiceType = LookupFacade.getInvoiceType(invoice.getInvoiceKind());
+        LuInvoiceTypeDTO luInvoiceTypeDTO = new LuInvoiceTypeDTO(
+                luInvoiceType.getCode(),
+                luInvoiceType.getArabicDescription(),
+                luInvoiceType.getEnglishDescription(),
+                luInvoiceType.getXmlDigitReference(),
+                luInvoiceType.getAllowedPercentage(),
+                luInvoiceType.getEnabled()
+        );
 
         // ── 2. Convert Invoice entity → InvoiceDTO ─────────────────────────
         InvoiceDTO invoiceDTO;
@@ -72,7 +73,7 @@ public class XmlRegenerationService {
 
         // ── 4. Generate raw XML via FreeMarker template ────────────────────
         String rawXml = xmlGenerationService.generateXML(invoiceDTO, requestFrom
-//               , luInvoiceTypeDTO
+               , luInvoiceTypeDTO
         );
 
         CustomLogging.logInfo(taxNumber, invoiceNumber,

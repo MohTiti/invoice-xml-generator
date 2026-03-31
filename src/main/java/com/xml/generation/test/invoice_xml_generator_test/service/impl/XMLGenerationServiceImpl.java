@@ -1,9 +1,13 @@
 package com.xml.generation.test.invoice_xml_generator_test.service.impl;
 
+import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import com.xml.generation.test.invoice_xml_generator_test.model.dto.InvoiceDTO;
 import com.xml.generation.test.invoice_xml_generator_test.model.dto.InvoiceItemDTO;
+import com.xml.generation.test.invoice_xml_generator_test.model.dto.LuInvoiceTypeDTO;
 import com.xml.generation.test.invoice_xml_generator_test.model.dto.ProvinceDTO;
-import com.xml.generation.test.invoice_xml_generator_test.model.enums.*;
+import com.xml.generation.test.invoice_xml_generator_test.model.enums.GeneralTaxType;
+import com.xml.generation.test.invoice_xml_generator_test.model.enums.NoteType;
+import com.xml.generation.test.invoice_xml_generator_test.model.enums.RequestFromEnum;
 import com.xml.generation.test.invoice_xml_generator_test.service.XMLGenerationService;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -24,6 +28,7 @@ public class XMLGenerationServiceImpl implements XMLGenerationService {
 
 
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     @Autowired
     private Template freemarkerTemplate;
@@ -32,13 +37,13 @@ public class XMLGenerationServiceImpl implements XMLGenerationService {
 
 
     @Override
-    public String generateXML(InvoiceDTO invoiceDTO, String requestFrom) {
+    public String generateXML(InvoiceDTO invoiceDTO, String requestFrom , LuInvoiceTypeDTO luInvoiceTypeDTO) {
 
         StringWriter stringWriter = new StringWriter();
         Map<String, Object> model = new HashMap<>();
         model.put("invoiceDTO", invoiceDTO);
         model.put("invoiceIssueDate", dateFormatter.format(invoiceDTO.getIssueDate()));
-
+        model.put("invoiceIssueTime", timeFormatter.format(invoiceDTO.getIssueTime()));
         if (requestFrom.equals(RequestFromEnum.MOBILE.toString())) {
             model.put("requestFrom", mobileCode);
         }else if (requestFrom.equals(RequestFromEnum.WEB.toString())) {
@@ -46,34 +51,9 @@ public class XMLGenerationServiceImpl implements XMLGenerationService {
         }
 
 
-        if(invoiceDTO.getInvoiceKind().equals(InvoiceKind.LOCAL)){
-            model.put("typeCodeWithKind", invoiceDTO.getInvoiceTypeCode().getTypeCode());
-        }
-
-        else if (invoiceDTO.getInvoiceKind().equals(InvoiceKind.EXPORT)) {
+        if(luInvoiceTypeDTO != null){
             String code = invoiceDTO.getInvoiceTypeCode().getTypeCode();
-            code = "1"+code.substring(1);
-            model.put("typeCodeWithKind", code);
-        } else if (invoiceDTO.getInvoiceKind().equals(InvoiceKind.DEVELOPMENTAL)) {
-            String code = invoiceDTO.getInvoiceTypeCode().getTypeCode();
-            code = "2"+code.substring(1);
-            model.put("typeCodeWithKind", code);
-
-        } else if (invoiceDTO.getInvoiceKind().equals(InvoiceKind.FLAG_1)) {
-            String code = invoiceDTO.getInvoiceTypeCode().getTypeCode();
-            code = "3"+code.substring(1);
-            model.put("typeCodeWithKind", code);
-
-        }else if (invoiceDTO.getInvoiceKind().equals(InvoiceKind.FLAG_2)) {
-            String code = invoiceDTO.getInvoiceTypeCode().getTypeCode();
-            code = "4"+code.substring(1);
-            model.put("typeCodeWithKind", code);
-
-        }else if (invoiceDTO.getInvoiceKind().equals(InvoiceKind.FLAG_3)) {
-            String code = invoiceDTO.getInvoiceTypeCode().getTypeCode();
-            code = "5"+code.substring(1);
-            model.put("typeCodeWithKind", code);
-
+            model.put("typeCodeWithKind", luInvoiceTypeDTO.getXmlDigitReference()+code.substring(1));
         }
 
 
@@ -89,12 +69,15 @@ public class XMLGenerationServiceImpl implements XMLGenerationService {
         model.put("currencyEnum", invoiceDTO.getCurrencyEnum());
 
         if(invoiceDTO.getBuyerDTO() != null) {
-            if (invoiceDTO.getBuyerDTO().getAdditionalBuyerIdType() != null) {
-                model.put("additionalBuyerIdType", invoiceDTO.getBuyerDTO().getAdditionalBuyerIdType().getValue());
+            if (invoiceDTO.getBuyerDTO().getAdditionalBuyerIdTypeLookupDto() != null && invoiceDTO.getBuyerDTO().getAdditionalBuyerIdTypeLookupDto().getCode() != null) {
+                model.put("additionalBuyerIdType", LookupFacade.getAdditionalBuyerIdType(invoiceDTO.getBuyerDTO().getAdditionalBuyerIdTypeLookupDto().getCode()).getCode());
+                model.put("additionalBuyerId" , invoiceDTO.getBuyerDTO().getAdditionalBuyerId());
             }
-
-            if (AdditionalBuyerIdType.TAXPAYER_NUMBERS.equals(invoiceDTO.getBuyerDTO().getAdditionalBuyerIdType())) {
-                model.put("buyerTaxNumber", invoiceDTO.getBuyerDTO().getAdditionalBuyerId());
+            if(invoiceDTO.getBuyerDTO().getAdditionalBuyerIdTn() != null){
+                model.put("buyerTaxNumber", invoiceDTO.getBuyerDTO().getAdditionalBuyerIdTn());
+            }
+            if(invoiceDTO.getBuyerDTO().getAdditionalBuyerIdSin() != null){
+                model.put("buyerSerialIncomeNumber", invoiceDTO.getBuyerDTO().getAdditionalBuyerIdSin());
             }
 
             ProvinceDTO buyerProvinceDTO = invoiceDTO.getBuyerDTO().getProvinceDTO();
@@ -141,8 +124,10 @@ public class XMLGenerationServiceImpl implements XMLGenerationService {
         try {
             freemarkerTemplate.process(model, stringWriter);
         } catch (TemplateException e) {
+            CustomLogging.logError(e.getMessage() , "50003032");
             throw new RuntimeException(e);
         } catch (IOException e) {
+            CustomLogging.logError(e.getMessage() , "50003033");
             throw new RuntimeException(e);
         }
 

@@ -3,7 +3,6 @@ package com.xml.generation.test.invoice_xml_generator_test.model.entity;
 
 import com.xml.generation.test.invoice_xml_generator_test.model.enums.RoleEnum;
 import jakarta.persistence.*;
-
 import java.util.Set;
 
 @Entity

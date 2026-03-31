@@ -1,15 +1,18 @@
 package com.xml.generation.test.invoice_xml_generator_test.model.entity;
 
-import com.xml.generation.test.invoice_xml_generator_test.model.entity.Activity;
-import com.xml.generation.test.invoice_xml_generator_test.model.entity.Buyer;
-import com.xml.generation.test.invoice_xml_generator_test.model.entity.InvoiceItem;
-import com.xml.generation.test.invoice_xml_generator_test.model.entity.User;
-import com.xml.generation.test.invoice_xml_generator_test.model.enums.*;
-import jakarta.persistence.*;
 
+
+import com.xml.generation.test.invoice_xml_generator_test.model.enums.InvoiceStatusEnum;
+import com.xml.generation.test.invoice_xml_generator_test.model.enums.InvoiceTypeEnum;
+import com.xml.generation.test.invoice_xml_generator_test.model.enums.NoteType;
+import com.xml.generation.test.invoice_xml_generator_test.model.enums.RequestFromEnum;
+import com.xml.generation.test.invoice_xml_generator_test.utils.LocalTimeToStringConverter;
+import com.xml.generation.test.invoice_xml_generator_test.utils.MapperUtil;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +34,8 @@ public class Invoice {
     @Column(name= "INV_STS ", columnDefinition="VARCHAR(20)")
     private String INV_STS ;
 
+    @Column(name = "BUYER_TAX_NUMBER", columnDefinition = "VARCHAR(200)")
+    private String buyerTaxNumber;
 
     @Column(name = "buyer_invoice_number", columnDefinition = "VARCHAR(255)")
     private String buyerInvoiceNumber;
@@ -38,6 +43,9 @@ public class Invoice {
     @Column(name = "issue_date", nullable = false)
     private Date issueDate;
 
+    @Column(name = "issue_time")
+    @Convert(converter = LocalTimeToStringConverter.class)
+    private LocalTime issueTime;
 
     @Column(name = "invoice_number", nullable = false, columnDefinition = "VARCHAR(255)")
     private String invoiceNumber;
@@ -60,8 +68,6 @@ public class Invoice {
 
     @Column(name= "invoice_kind",columnDefinition = "VARCHAR(255)")
     private String invoiceKind;
-
-
 
     @Column(name= "reason_of_note", columnDefinition="text")
     private String reasonOfNote;
@@ -107,14 +113,43 @@ public class Invoice {
     private Activity activity;
 
     @Column(name = "currency", columnDefinition = "VARCHAR(15)")
-    @Enumerated(EnumType.STRING)
-    private CurrencyEnum currency;
+    private String currency;
+
+
+    @Column(name = "rate", precision = 10, scale = 4 ,nullable = false)
+    private BigDecimal rate;
+
+    @Column(name = "rate_date", nullable = false)
+    private LocalDateTime rateDate;
+
+    @Column(name = "is_succeed")
+    private Boolean isSucceed;
 
     @Column(name = "xml_file", columnDefinition = "BLOB")
     private byte[] xmlFile;
 
-    @OneToMany(fetch = FetchType.EAGER,cascade= CascadeType.ALL, mappedBy="invoice")
+    @Column(name = "exemption_reason")
+    private String exemptionReason;
+
+    @OneToMany(fetch = FetchType.EAGER,cascade=CascadeType.ALL, mappedBy="invoice")
     private List<InvoiceItem> invoiceItems = new ArrayList<>();
+
+
+    public String getExemptionReason() {
+        return exemptionReason;
+    }
+
+    public void setExemptionReason(String exemptionReason) {
+        this.exemptionReason = exemptionReason;
+    }
+
+    public LocalTime getIssueTime() {
+        return issueTime;
+    }
+
+    public void setIssueTime(LocalTime issueTime) {
+        this.issueTime = issueTime;
+    }
 
     public BigDecimal getRate() {
         return rate;
@@ -124,11 +159,11 @@ public class Invoice {
         this.rate = rate;
     }
 
-    public Date getRateDate() {
+    public LocalDateTime getRateDate() {
         return rateDate;
     }
 
-    public void setRateDate(Date rateDate) {
+    public void setRateDate(LocalDateTime rateDate) {
         this.rateDate = rateDate;
     }
 
@@ -137,17 +172,13 @@ public class Invoice {
     private RequestFromEnum requestFromEnum;
 
 
-    @Column(name = "rate", precision = 10, scale = 4 ,nullable = false)
-    private BigDecimal rate;
+    public String getBuyerTaxNumber() {
+        return buyerTaxNumber;
+    }
 
-    @Column(name = "rate_date", nullable = false)
-    private Date rateDate;
-
-    @Column(name = "is_succeed")
-    private Boolean isSucceed;
-
-    @Column(name = "is_signed")
-    private Boolean isSigned;
+    public void setBuyerTaxNumber(String buyerTaxNumber) {
+        this.buyerTaxNumber = buyerTaxNumber;
+    }
 
     public Boolean getSucceed() {
         return isSucceed;
@@ -187,14 +218,6 @@ public class Invoice {
 
     public LocalDateTime getCreatedDate() {return createdDate;}
 
-    public Boolean getSigned() {
-        return isSigned;
-    }
-
-    public void setSigned(Boolean signed) {
-        isSigned = signed;
-    }
-
     public BigDecimal getMarginOfError() {
         return marginOfError;
     }
@@ -221,11 +244,11 @@ public class Invoice {
         this.issueDate = issueDate;
     }
 
-    public void setCurrency(CurrencyEnum currency) {
+    public void setCurrency(String currency) {
         this.currency = currency;
     }
 
-    public CurrencyEnum getCurrency(){
+    public String getCurrency(){
         return currency;
     }
 
@@ -317,9 +340,11 @@ public class Invoice {
         this.notes = notes;
     }
 
-    public String getInvoiceKind() { return invoiceKind;}
+    public String getInvoiceKind() { return MapperUtil.mapCodeToIT(invoiceKind);}
 
-    public void setInvoiceKind(String invoiceKind) { this.invoiceKind = invoiceKind; }
+    public void setInvoiceKind(String invoiceKind) {
+        this.invoiceKind = mapITtoCode(invoiceKind);
+    }
 
     public BigDecimal getTotalExcludingTaxes() {
         return totalExcludingTaxes;
@@ -399,5 +424,16 @@ public class Invoice {
 
     public void setOriginalInvoice(Invoice originalInvoice) {
         this.originalInvoice = originalInvoice;
+    }
+    private String mapITtoCode(String itCode) {
+        switch (itCode) {
+            case "IT-001": return "LOCAL";
+            case "IT-002": return "EXPORT";
+            case "IT-003": return "DEVELOPMENTAL";
+            case "IT-004": return "FLAG_1";
+            case "IT-005": return "FLAG_2";
+            case "IT-006": return "FLAG_3";
+            default: return itCode;
+        }
     }
 }

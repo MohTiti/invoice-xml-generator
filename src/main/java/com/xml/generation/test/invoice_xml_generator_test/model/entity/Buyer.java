@@ -1,9 +1,6 @@
 package com.xml.generation.test.invoice_xml_generator_test.model.entity;
 
-import com.xml.generation.test.invoice_xml_generator_test.model.entity.Province;
-import com.xml.generation.test.invoice_xml_generator_test.model.enums.AdditionalBuyerIdType;
 import jakarta.persistence.*;
-
 
 @Entity
 @Table(name = "buyer")
@@ -12,11 +9,15 @@ public class Buyer {
     @GeneratedValue
     private Long id;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "additional_buyer_id_type")
-    private AdditionalBuyerIdType additionalBuyerIdType;
+    private String additionalBuyerIdType;
     @Column(name = "additional_buyer_id", nullable = false, columnDefinition = "VARCHAR(200)")
     private String additionalBuyerId;
+    @Column(name = "TAXPAYER_NUMBERS", columnDefinition = "VARCHAR(200)")
+    private String additionalBuyerIdTn;
+
+    @Column(name = "SERIAL_INCOME_NUMBER", columnDefinition = "VARCHAR(200)")
+    private String additionalBuyerIdSin;
     @Column(name = "buyer_name", nullable = false, columnDefinition = "VARCHAR2(255)")
     private String buyerName;
     @Column(name = "phone_number", nullable = false, columnDefinition = "VARCHAR(14)")
@@ -27,6 +28,22 @@ public class Buyer {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "province_id")
     private Province province;
+
+    public String getAdditionalBuyerIdTn() {
+        return additionalBuyerIdTn;
+    }
+
+    public void setAdditionalBuyerIdTn(String additionalBuyerIdTn) {
+        this.additionalBuyerIdTn = additionalBuyerIdTn;
+    }
+
+    public String getAdditionalBuyerIdSin() {
+        return additionalBuyerIdSin;
+    }
+
+    public void setAdditionalBuyerIdSin(String additionalBuyerIdSin) {
+        this.additionalBuyerIdSin = additionalBuyerIdSin;
+    }
 
     public Long getBuyerId() {
         return id;
@@ -60,6 +77,7 @@ public class Buyer {
         this.postalCode = postalCode;
     }
 
+
     public String getPhoneNumber() {
         return phoneNumber;
     }
@@ -68,11 +86,11 @@ public class Buyer {
         this.phoneNumber = phoneNumber;
     }
 
-    public AdditionalBuyerIdType getAdditionalBuyerIdType() {
+    public String getAdditionalBuyerIdType() {
         return additionalBuyerIdType;
     }
 
-    public void setAdditionalBuyerIdType(AdditionalBuyerIdType additionalBuyerIdType) {
+    public void setAdditionalBuyerIdType(String additionalBuyerIdType) {
         this.additionalBuyerIdType = additionalBuyerIdType;
     }
 

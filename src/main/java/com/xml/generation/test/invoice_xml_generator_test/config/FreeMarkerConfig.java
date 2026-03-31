@@ -22,7 +22,7 @@ public class FreeMarkerConfig {
             FreeMarkerConfigurationFactoryBean freemarkerConfiguration) throws Exception {
         return freemarkerConfiguration
                 .getObject()
-                .getTemplate("invoice.ftlh");
+                .getTemplate("invoice_2.0_.ftlh");
     }
 
     @Bean
