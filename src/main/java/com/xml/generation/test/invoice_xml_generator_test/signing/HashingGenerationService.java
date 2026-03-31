@@ -1,0 +1,5 @@
+package com.xml.generation.test.invoice_xml_generator_test.signing;
+
+public interface HashingGenerationService {
+    String getInvoiceHash(String xmlDocument);
+}

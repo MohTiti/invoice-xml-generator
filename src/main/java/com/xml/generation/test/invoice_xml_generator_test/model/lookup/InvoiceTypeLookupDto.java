@@ -1,0 +1,17 @@
+package com.xml.generation.test.invoice_xml_generator_test.model.lookup;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class InvoiceTypeLookupDto {
+    private String code;
+    private String arabicDescription;
+    private String englishDescription;
+    private BigDecimal generalTaxType;
+}
