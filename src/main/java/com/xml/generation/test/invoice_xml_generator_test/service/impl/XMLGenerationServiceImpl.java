@@ -124,10 +124,10 @@ public class XMLGenerationServiceImpl implements XMLGenerationService {
         try {
             freemarkerTemplate.process(model, stringWriter);
         } catch (TemplateException e) {
-            CustomLogging.logError(e.getMessage() , "50003032");
+            CustomLogging.logError("100", null, "FreeMarker template processing failed: {}", e.getMessage());
             throw new RuntimeException(e);
         } catch (IOException e) {
-            CustomLogging.logError(e.getMessage() , "50003033");
+            CustomLogging.logError("101", null, "FreeMarker IO error during XML generation: {}", e.getMessage());
             throw new RuntimeException(e);
         }
 

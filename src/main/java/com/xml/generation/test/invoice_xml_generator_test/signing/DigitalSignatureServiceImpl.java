@@ -1,17 +1,14 @@
 package com.xml.generation.test.invoice_xml_generator_test.signing;
 
+import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import com.xml.generation.test.invoice_xml_generator_test.signing.model.DigitalSignature;
 
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.util.Base64;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class DigitalSignatureServiceImpl implements DigitalSignatureService {
-
-    private static final Logger LOG = Logger.getLogger(DigitalSignatureServiceImpl.class.getName());
 
     /**
      * Signs the invoice XML hash with ECDSA using the supplied private key.
@@ -36,8 +33,9 @@ public class DigitalSignatureServiceImpl implements DigitalSignatureService {
             signature.update(messageHash);
             return signature.sign();
         } catch (Exception e) {
-            LOG.log(Level.SEVERE, e.getMessage());
+            CustomLogging.logError("ECDSA_SIGN_FAILED", null,
+                    "ECDSA signing failed: {}", e.getMessage());
+            throw new RuntimeException("ECDSA signing failed", e);
         }
-        return null;
     }
 }

@@ -3,7 +3,6 @@ package com.xml.generation.test.invoice_xml_generator_test.service.impl;
 import com.xml.generation.test.invoice_xml_generator_test.converter.InvoiceReverseConverter;
 import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import com.xml.generation.test.invoice_xml_generator_test.model.dto.InvoiceDTO;
-//import com.xml.generation.test.invoice_xml_generator_test.model.dto.LuInvoiceTypeDTO;
 import com.xml.generation.test.invoice_xml_generator_test.model.dto.LuInvoiceTypeDTO;
 import com.xml.generation.test.invoice_xml_generator_test.model.entity.Invoice;
 import com.xml.generation.test.invoice_xml_generator_test.model.enums.RequestFromEnum;
@@ -11,6 +10,7 @@ import com.xml.generation.test.invoice_xml_generator_test.model.lookup.Lu_Invoic
 import com.xml.generation.test.invoice_xml_generator_test.service.QrGeneratorService;
 import com.xml.generation.test.invoice_xml_generator_test.service.XMLGenerationService;
 import com.xml.generation.test.invoice_xml_generator_test.service.XmlCanonicalizer;
+import com.xml.generation.test.invoice_xml_generator_test.utils.XmlDecoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -30,20 +30,12 @@ public class XmlRegenerationService {
     @Value("${signing.enabled}")
     private boolean signingEnabled;
 
-    /**
-     * Full pipeline — mirrors the SME's core-e-invoicing-submit-invoice-for-sme-process:
-     *
-     *   1. generateXML          → raw FreeMarker XML
-     *   2. minifyAndCanonicalize → canonicalized XML          (SME: MinifyAndCanonicalizeXml)
-     *   3. generateQRstatically → base64 BER-TLV QR code      (SME: InvoiceQRGenerator)
-     *   4. sign                 → POST /document/sign          (SME: invoiceSigningForSme)
-     */
     public byte[] regenerateXml(Invoice invoice, boolean forceSigning) throws Exception {
 
         String taxNumber     = invoice.getUser().getTaxpayer().getTaxNumber();
         String invoiceNumber = invoice.getInvoiceNumber();
 
-        CustomLogging.logInfo(taxNumber, invoiceNumber,
+        CustomLogging.logInfo(taxNumber, invoiceNumber, invoice.getId(),
                 "Regenerating XML for invoiceId={}", invoice.getId());
 
         // ── 1. Fetch LuInvoiceType ─────────────────────────────────────────
@@ -62,6 +54,8 @@ public class XmlRegenerationService {
         try {
             invoiceDTO = invoiceReverseConverter.entityToDto(invoice);
         } catch (Exception e) {
+            CustomLogging.logError("CONVERT_FAILED", invoice.getId(),
+                    "Failed to convert invoiceId={}: {}", invoice.getId(), e.getMessage());
             throw new RuntimeException(
                     "Failed to convert invoice id=" + invoice.getId() + ": " + e.getMessage(), e);
         }
@@ -76,7 +70,7 @@ public class XmlRegenerationService {
                , luInvoiceTypeDTO
         );
 
-        CustomLogging.logInfo(taxNumber, invoiceNumber,
+        CustomLogging.logInfo(taxNumber, invoiceNumber, invoice.getId(),
                 "Base XML generated for invoiceId={}", invoice.getId());
 
         // ── 5. Minify + Canonicalize  (SME: MinifyAndCanonicalizeXml step) ─
@@ -84,21 +78,26 @@ public class XmlRegenerationService {
         try {
             canonicalXml = xmlCanonicalizer.minifyAndCanonicalize(rawXml)
                     .replaceAll("<\\?xml(.+?)\\?>", "");
-            CustomLogging.logInfo(taxNumber, invoiceNumber,
+            CustomLogging.logInfo(taxNumber, invoiceNumber, invoice.getId(),
                     "XML canonicalized for invoiceId={}", invoice.getId());
         } catch (Exception e) {
+            CustomLogging.logError("CANONICALIZE_FAILED", invoice.getId(),
+                    "Canonicalization failed for invoiceId={}: {}", invoice.getId(), e.getMessage());
             throw new RuntimeException(
                     "Canonicalization failed for invoiceId=" + invoice.getId() + ": " + e.getMessage(), e);
         }
 
         // ── 6. Generate QR code  (SME: InvoiceQRGenerator step) ───────────
         //    QR is built from the canonicalized XML, same as SME
+        //todo ============ only for zero-invoices ===========
         String qrCode;
         try {
             qrCode = qrGeneratorService.generateQRstatically(canonicalXml);
-            CustomLogging.logInfo(taxNumber, invoiceNumber,
+            CustomLogging.logInfo(taxNumber, invoiceNumber, invoice.getId(),
                     "QR generated for invoiceId={}", invoice.getId());
         } catch (Exception e) {
+            CustomLogging.logError("QR_FAILED", invoice.getId(),
+                    "QR generation failed for invoiceId={}: {}", invoice.getId(), e.getMessage());
             throw new RuntimeException(
                     "QR generation failed for invoiceId=" + invoice.getId() + ": " + e.getMessage(), e);
         }
@@ -106,14 +105,21 @@ public class XmlRegenerationService {
         // ── 7. Call signing service  (SME: invoiceSigningForSme step) ──────
         //    POST { invoice: canonicalXml, qrCode } → signed XML
         if (!signingEnabled && !forceSigning) {
-            CustomLogging.logInfo(taxNumber, invoiceNumber,
+            CustomLogging.logWarn("SIGNING_SKIPPED", taxNumber, invoiceNumber, invoice.getId(),
                     "Signing skipped (signing.enabled=false) for invoiceId={}", invoice.getId());
             return canonicalXml.getBytes(StandardCharsets.UTF_8);
         }
 
-        String signedXml = signingCallerService.sign(canonicalXml, qrCode, invoice);
+        String signedXml;
+        try {
+            signedXml = signingCallerService.sign(canonicalXml, qrCode, invoice);
+        } catch (Exception e) {
+            CustomLogging.logError("SIGNING_FAILED", invoice.getId(),
+                    "Signing failed for invoiceId={}: {}", invoice.getId(), e.getMessage());
+            throw new RuntimeException("Signing failed for invoiceId=" + invoice.getId() + ": " + e.getMessage(), e);
+        }
 
-        CustomLogging.logInfo(taxNumber, invoiceNumber,
+        CustomLogging.logInfo(taxNumber, invoiceNumber, invoice.getId(),
                 "Signing complete for invoiceId={}", invoice.getId());
 
         return signedXml.getBytes(StandardCharsets.UTF_8);
@@ -131,7 +137,7 @@ public class XmlRegenerationService {
         // corrupted / placeholder values
         if (content.isEmpty() || content.equalsIgnoreCase("xml")) return false;
 
-        String xml = resolveXml(content);
+        String xml = XmlDecoder.resolveXml(content);
         if (xml == null) return false;
 
         return xml.contains("<ds:Signature")
@@ -139,28 +145,5 @@ public class XmlRegenerationService {
                 || xml.contains("<sig:UBLDocumentSignatures");
     }
 
-    // Returns the XML string after decoding base64 once or twice if needed.
-    // Returns null if content is not recognizable as XML.
-    private String resolveXml(String content) {
-        if (looksLikeXml(content)) return content;
 
-        // try decode once
-        try {
-            String once = new String(java.util.Base64.getDecoder().decode(content), StandardCharsets.UTF_8).trim();
-            if (looksLikeXml(once)) return once;
-
-            // try decode twice
-            try {
-                String twice = new String(java.util.Base64.getDecoder().decode(once), StandardCharsets.UTF_8).trim();
-                if (looksLikeXml(twice)) return twice;
-            } catch (Exception ignored) {}
-
-        } catch (Exception ignored) {}
-
-        return null;
-    }
-
-    private boolean looksLikeXml(String content) {
-        return content.startsWith("<");
-    }
 }

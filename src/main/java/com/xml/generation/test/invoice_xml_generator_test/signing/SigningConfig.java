@@ -4,6 +4,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,23 +48,34 @@ public class SigningConfig {
 
     @Bean("signingPrivateKey")
     public PrivateKey getPrivateKey() throws Exception {
-        Security.addProvider(new BouncyCastleProvider());
-        // Reconstruct full PEM by wrapping the raw body with EC headers
-        String pem = "-----BEGIN EC PRIVATE KEY-----\n"
-                + signingPrivateKey.replaceAll("\n", "").replaceAll("\t", "")
-                + "\n-----END EC PRIVATE KEY-----";
-        Reader reader = new InputStreamReader(
-                new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8)));
-        Object parsed = new PEMParser(reader).readObject();
-        KeyPair pair = new JcaPEMKeyConverter().getKeyPair((PEMKeyPair) parsed);
-        return pair.getPrivate();
+        try {
+            Security.addProvider(new BouncyCastleProvider());
+            String pem = "-----BEGIN EC PRIVATE KEY-----\n"
+                    + signingPrivateKey.replaceAll("\n", "").replaceAll("\t", "")
+                    + "\n-----END EC PRIVATE KEY-----";
+            Reader reader = new InputStreamReader(
+                    new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8)));
+            Object parsed = new PEMParser(reader).readObject();
+            KeyPair pair = new JcaPEMKeyConverter().getKeyPair((PEMKeyPair) parsed);
+            return pair.getPrivate();
+        } catch (Exception e) {
+            CustomLogging.logError("PRIVATE_KEY_LOAD_FAILED", null,
+                    "Failed to load signing private key — application cannot sign invoices: {}", e.getMessage());
+            throw e;
+        }
     }
 
     @Bean("signingCertificate")
     public X509Certificate getCertificate() throws Exception {
-        CertificateFactory factory = CertificateFactory.getInstance("X.509");
-        byte[] certBytes = Base64.getDecoder().decode(signingCertificateAsString.getBytes(StandardCharsets.UTF_8));
-        return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
+        try {
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            byte[] certBytes = Base64.getDecoder().decode(signingCertificateAsString.getBytes(StandardCharsets.UTF_8));
+            return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
+        } catch (Exception e) {
+            CustomLogging.logError("CERTIFICATE_LOAD_FAILED", null,
+                    "Failed to load signing certificate — application cannot sign invoices: {}", e.getMessage());
+            throw e;
+        }
     }
 
     @Bean("signingService")

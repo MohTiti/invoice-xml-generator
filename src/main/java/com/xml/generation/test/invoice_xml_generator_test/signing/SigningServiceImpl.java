@@ -43,27 +43,11 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
+import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/**
- * Embedded signing service — mirrors the einvoicing-signing-java SigningServiceImpl exactly,
- * ported to Spring Boot 3.x (jakarta.annotation) and embedded in this project so no
- * external signing service call is required.
- *
- * Pipeline:
- *   1. Hash the canonical XML (SHA-256, base64)
- *   2. ECDSA-sign the hash with the configured private key
- *   3. Transform XML via 4 XSLT passes to inject UBL extension scaffolding, QR placeholder,
- *      and Signature placeholder
- *   4. Populate the injected scaffold with: certificate hash, signing time, issuer info,
- *      digital signature, XML hash, certificate string, and QR code
- *   5. Return the fully signed XML and its hash
- */
 public class SigningServiceImpl {
-
-    private static final Logger LOGGER = Logger.getLogger(SigningServiceImpl.class.getName());
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
@@ -103,7 +87,8 @@ public class SigningServiceImpl {
                 reader.setFeature("http://xml.org/sax/features/namespaces", true);
                 return reader;
             } catch (SAXException e) {
-                LOGGER.warning("SAXReader init warning, using default: " + e.getMessage());
+                CustomLogging.logWarn("SAXREADER_INIT_WARN", null, null, null,
+                        "SAXReader feature init warning, using default reader: {}", e.getMessage());
                 return new SAXReader();
             }
         }
@@ -116,7 +101,8 @@ public class SigningServiceImpl {
             try {
                 return MessageDigest.getInstance("SHA-256");
             } catch (NoSuchAlgorithmException e) {
-                LOGGER.severe("SHA-256 not available: " + e.getMessage());
+                CustomLogging.logError("DIGEST_INIT_FAILED", null,
+                        "SHA-256 MessageDigest unavailable — signing will fail: {}", e.getMessage());
                 return null;
             }
         }
@@ -144,28 +130,32 @@ public class SigningServiceImpl {
             removeElementsTemplates = transformerFactory.newTemplates(
                     new StreamSource(new ClassPathResource("xslt/removeElements.xsl").getInputStream()));
         } catch (Exception e) {
-            LOGGER.warning("Could not load removeElements.xsl: " + e.getMessage());
+            CustomLogging.logError("XSLT_LOAD_FAILED", null,
+                    "Could not load removeElements.xsl — signing will fail: {}", e.getMessage());
         }
 
         try {
             addUBLElementTemplates = transformerFactory.newTemplates(
                     new StreamSource(new ClassPathResource("xslt/addUBLElement.xsl").getInputStream()));
         } catch (Exception e) {
-            LOGGER.warning("Could not load addUBLElement.xsl: " + e.getMessage());
+            CustomLogging.logError("XSLT_LOAD_FAILED", null,
+                    "Could not load addUBLElement.xsl — signing will fail: {}", e.getMessage());
         }
 
         try {
             addQRElementTemplates = transformerFactory.newTemplates(
                     new StreamSource(new ClassPathResource("xslt/addQRElement.xsl").getInputStream()));
         } catch (Exception e) {
-            LOGGER.warning("Could not load addQRElement.xsl: " + e.getMessage());
+            CustomLogging.logError("XSLT_LOAD_FAILED", null,
+                    "Could not load addQRElement.xsl — signing will fail: {}", e.getMessage());
         }
 
         try {
             addSignatureElementTemplates = transformerFactory.newTemplates(
                     new StreamSource(new ClassPathResource("xslt/addSignatureElement.xsl").getInputStream()));
         } catch (Exception e) {
-            LOGGER.warning("Could not load addSignatureElement.xsl: " + e.getMessage());
+            CustomLogging.logError("XSLT_LOAD_FAILED", null,
+                    "Could not load addSignatureElement.xsl — signing will fail: {}", e.getMessage());
         }
 
         try {
@@ -176,7 +166,8 @@ public class SigningServiceImpl {
                 ublElement = ublElement.replace("<!-- Please note that the signature values are sample values only -->", "");
             }
         } catch (IOException e) {
-            LOGGER.warning("Could not load xml/ubl.xml: " + e.getMessage());
+            CustomLogging.logError("XML_RESOURCE_LOAD_FAILED", null,
+                    "Could not load xml/ubl.xml — signing will fail: {}", e.getMessage());
         }
 
         try {
@@ -184,7 +175,8 @@ public class SigningServiceImpl {
                     new InputStreamReader(new ClassPathResource("xml/qr.xml").getInputStream(), StandardCharsets.UTF_8))
                     .lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
-            LOGGER.warning("Could not load xml/qr.xml: " + e.getMessage());
+            CustomLogging.logError("XML_RESOURCE_LOAD_FAILED", null,
+                    "Could not load xml/qr.xml — signing will fail: {}", e.getMessage());
         }
 
         try {
@@ -192,7 +184,8 @@ public class SigningServiceImpl {
                     new InputStreamReader(new ClassPathResource("xml/signature.xml").getInputStream(), StandardCharsets.UTF_8))
                     .lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
-            LOGGER.warning("Could not load xml/signature.xml: " + e.getMessage());
+            CustomLogging.logError("XML_RESOURCE_LOAD_FAILED", null,
+                    "Could not load xml/signature.xml — signing will fail: {}", e.getMessage());
         }
     }
 
@@ -211,6 +204,8 @@ public class SigningServiceImpl {
         try {
             invoiceHash = HASHING_GENERATION_SERVICE.getInvoiceHash(xmlDocument);
         } catch (Exception e) {
+            CustomLogging.logError("HASH_FAILED", invoice.getId(),
+                    "Failed to hash XML for invoiceId={}: {}", invoice.getId(), e.getMessage());
             throw new Exception("Unable to generate hash for invoice XML: " + e.getMessage(), e);
         }
         result.setInvoiceHash(invoiceHash);
@@ -220,6 +215,8 @@ public class SigningServiceImpl {
         try {
             digitalSignature = DIGITAL_SIGNATURE_SERVICE.getDigitalSignature(xmlDocument, privateKey, invoiceHash);
         } catch (Exception e) {
+            CustomLogging.logError("DIGITAL_SIGNATURE_FAILED", invoice.getId(),
+                    "Failed to create digital signature for invoiceId={}: {}", invoice.getId(), e.getMessage());
             throw new Exception("Unable to create digital signature: " + e.getMessage(), e);
         }
 
@@ -327,7 +324,8 @@ public class SigningServiceImpl {
         List<Node> nodes = xpath.selectNodes(document);
         IntStream.range(0, nodes.size())
                 .mapToObj(i -> (Element) nodes.get(i))
-                .forEach(el -> el.setText(value));
+                //todo control qr code text saving
+                .forEach(el -> el.setText(value != null ? value : ""));
     }
 
     private String getNodeXmlValue(Document document, String xpathExpr) {
@@ -348,6 +346,11 @@ public class SigningServiceImpl {
 
     private byte[] hashStringToBytes(byte[] toBeHashed) {
         MessageDigest md = digestThreadLocal.get();
+        if (md == null) {
+            CustomLogging.logError("DIGEST_NULL", null,
+                    "SHA-256 MessageDigest is null — SHA-256 may be unavailable");
+            throw new IllegalStateException("SHA-256 MessageDigest failed to initialize");
+        }
         md.reset();
         return md.digest(toBeHashed);
     }

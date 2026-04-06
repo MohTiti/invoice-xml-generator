@@ -30,7 +30,7 @@ public class LookupFacade {
 
     @PostConstruct
     public void loadAllLookups() {
-        CustomLogging.logInfo(null, null, "Loading all lookup tables into memory...");
+        CustomLogging.logInfo(null, null,null, "Loading all lookup tables into memory...");
 
         invoiceTypeRepository.findAll()
                 .forEach(t -> invoiceTypeMap.put(t.getCode(), t));
@@ -44,7 +44,7 @@ public class LookupFacade {
         isic4LookupRepository.findAll()
                 .forEach(i -> isic4Map.put(i.getCode(), i));
 
-        CustomLogging.logInfo(null, null, "Lookups loaded → invoiceTypes={} currencies={} buyerIdTypes={} isic4={}",
+        CustomLogging.logInfo(null, null, null,"Lookups loaded → invoiceTypes={} currencies={} buyerIdTypes={} isic4={}",
                 invoiceTypeMap.size(),
                 currencyMap.size(),
                 additionalBuyerMap.size(),
@@ -55,6 +55,8 @@ public class LookupFacade {
     public static Lu_InvoiceType getInvoiceType(String code) {
         Lu_InvoiceType result = invoiceTypeMap.get(code);
         if (result == null) {
+            CustomLogging.logError("LOOKUP_NOT_FOUND", null,
+                    "InvoiceType not found for code={}", code);
             throw new IllegalArgumentException("InvoiceType not found for code: " + code);
         }
         return result;
@@ -63,6 +65,8 @@ public class LookupFacade {
     public static Currency getCurrency(String code) {
         Currency result = currencyMap.get(code);
         if (result == null) {
+            CustomLogging.logError("LOOKUP_NOT_FOUND", null,
+                    "Currency not found for code={}", code);
             throw new IllegalArgumentException("Currency not found for code: " + code);
         }
         return result;
@@ -71,6 +75,8 @@ public class LookupFacade {
     public static AdditionalBuyerIdType getAdditionalBuyerIdType(String code) {
         AdditionalBuyerIdType result = additionalBuyerMap.get(code);
         if (result == null) {
+            CustomLogging.logError("LOOKUP_NOT_FOUND", null,
+                    "AdditionalBuyerIdType not found for code={}", code);
             throw new IllegalArgumentException("AdditionalBuyerIdType not found for code: " + code);
         }
         return result;
@@ -86,6 +92,8 @@ public class LookupFacade {
 
         Isic4Lookup result = isic4Map.get(isicCode);
         if (result == null) {
+            CustomLogging.logError("LOOKUP_NOT_FOUND", null,
+                    "Isic4 not found for code={}", code);
             throw new IllegalArgumentException("Isic4 not found for code: " + code);
         }
         return new LuIsic4Dto(

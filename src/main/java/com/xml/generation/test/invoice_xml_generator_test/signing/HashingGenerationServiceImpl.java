@@ -1,15 +1,13 @@
 package com.xml.generation.test.invoice_xml_generator_test.signing;
 
+import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class HashingGenerationServiceImpl implements HashingGenerationService {
-
-    private static final Logger LOG = Logger.getLogger(HashingGenerationServiceImpl.class.getName());
 
     private static MessageDigest digest;
 
@@ -17,7 +15,8 @@ public class HashingGenerationServiceImpl implements HashingGenerationService {
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            LOG.log(Level.SEVERE, e.getMessage());
+            CustomLogging.logError("DIGEST_INIT_FAILED", null,
+                    "SHA-256 algorithm unavailable — invoice hashing will fail: {}", e.getMessage());
         }
     }
 
@@ -27,6 +26,11 @@ public class HashingGenerationServiceImpl implements HashingGenerationService {
     }
 
     private byte[] hashStringToBytes(byte[] bytes) {
+        if (digest == null) {
+            CustomLogging.logError("DIGEST_NULL", null,
+                    "SHA-256 MessageDigest is null — cannot hash invoice XML");
+            throw new IllegalStateException("SHA-256 MessageDigest failed to initialize");
+        }
         synchronized (digest) {
             return digest.digest(bytes);
         }

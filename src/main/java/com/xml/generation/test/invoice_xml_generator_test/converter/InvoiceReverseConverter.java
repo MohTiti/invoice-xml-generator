@@ -1,6 +1,7 @@
 package com.xml.generation.test.invoice_xml_generator_test.converter;
 
 import com.beust.jcommander.internal.Maps;
+import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.MultiFormatWriter;
@@ -171,8 +172,12 @@ public class InvoiceReverseConverter {
                     BarcodeFormat.QR_CODE, 200, 200, hintMap);
             MatrixToImageWriter.writeToStream(matrix, "png", byteArrayOutputStream);
         } catch (IOException e) {
+            CustomLogging.logError("QR_IMAGE_FAILED", null,
+                    "Failed to generate QR image (IO): {}", e.getMessage());
             throw new FailedToGenerateQRImageException();
         } catch (WriterException e) {
+            CustomLogging.logError("QR_IMAGE_FAILED", null,
+                    "Failed to generate QR image (Writer): {}", e.getMessage());
             throw new FailedToGenerateQRImageException();
         }
         return "data:image/png;base64," + Base64.getEncoder().encodeToString(byteArrayOutputStream.toByteArray());

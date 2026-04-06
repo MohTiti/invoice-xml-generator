@@ -9,44 +9,32 @@ public class CustomLogging {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("jsonLogger");
 
-    public static void logDebug(String message) {
-        LOGGER.debug(message);
+    public static void logDebug(String message, Object... args) {
+        LOGGER.debug(message, args);
     }
 
-    public static void logInfo(String taxNumber, String invoiceNumber, String message, Object... args) {
-        if (!StringUtils.isBlank(taxNumber)) {
-            MDC.put("taxNumber", taxNumber);
-        }
-
-        if (!StringUtils.isBlank(invoiceNumber)) {
-            MDC.put("invoiceNumber", invoiceNumber);
-        }
+    public static void logInfo(String taxNumber, String invoiceNumber, Long invoiceId, String message, Object... args) {
+        if (!StringUtils.isBlank(taxNumber))   MDC.put("taxNumber",     taxNumber);
+        if (!StringUtils.isBlank(invoiceNumber)) MDC.put("invoiceNumber", invoiceNumber);
+        if (invoiceId != null)                 MDC.put("invoiceId",     String.valueOf(invoiceId));
         LOGGER.info(message, args);
         MDC.clear();
     }
 
-    public static void logWarn(String errorCode, String taxNumber, String message, Object... args
-    ) {
-        if (!StringUtils.isBlank(errorCode)) {
-            MDC.put("errorCode", errorCode);
-        }
-        if (!StringUtils.isBlank(taxNumber)) {
-            MDC.put("taxNumber", taxNumber);
-        }
+    public static void logWarn(String errorCode, String taxNumber, String invoiceNumber, Long invoiceId, String message, Object... args) {
+        if (!StringUtils.isBlank(errorCode))   MDC.put("errorCode",     errorCode);
+        if (!StringUtils.isBlank(taxNumber))   MDC.put("taxNumber",     taxNumber);
+        if (!StringUtils.isBlank(invoiceNumber)) MDC.put("invoiceNumber", invoiceNumber);
+        if (invoiceId != null)                 MDC.put("invoiceId",     String.valueOf(invoiceId));
         LOGGER.warn(message, args);
         MDC.clear();
-
     }
 
-    public static void logError(String errorCode, String message, Object... args
-    ) {
-        if (!StringUtils.isBlank(errorCode)) {
-            MDC.put("errorCode", errorCode);
-            LOGGER.error(message, args);
-            MDC.remove("errorCode");
-        } else {
-            LOGGER.error(message, args);
-        }
+    public static void logError(String errorCode, Long invoiceId, String message, Object... args) {
+        if (!StringUtils.isBlank(errorCode)) MDC.put("errorCode", errorCode);
+        if (invoiceId != null)               MDC.put("invoiceId", String.valueOf(invoiceId));
+        LOGGER.error(message, args);
+        MDC.clear();
     }
 
 }
