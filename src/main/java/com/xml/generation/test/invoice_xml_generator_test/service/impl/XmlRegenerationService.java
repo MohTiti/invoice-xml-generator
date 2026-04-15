@@ -128,7 +128,7 @@ public class XmlRegenerationService {
     public byte[] regenerateXml(Invoice invoice) throws Exception {
         return regenerateXml(invoice, false);
     }
-
+//todo testing purposes
     public boolean isSigned(byte[] xmlFile) {
         if (xmlFile == null || xmlFile.length == 0) return false;
 

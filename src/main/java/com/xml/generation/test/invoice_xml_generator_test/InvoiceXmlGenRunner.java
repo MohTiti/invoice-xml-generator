@@ -24,7 +24,7 @@ public class InvoiceXmlGenRunner implements CommandLineRunner {
         if ("GENERATE".equals(taskType)) {
             processXml.singleInvoice();
         } else if ("PUBLISH".equals(taskType)) {
-            streamPublisher.publishToDesktop();
+            streamPublisher.publishInvoiceXml();
         }
         CustomLogging.logInfo(null, null, null, "InvoiceXmlGenRunner finished");
     }

@@ -1,6 +1,7 @@
 package com.xml.generation.test.invoice_xml_generator_test.tasks;
 
 import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
+import com.xml.generation.test.invoice_xml_generator_test.minio.serivce.MinioStorageService;
 import com.xml.generation.test.invoice_xml_generator_test.model.entity.Invoice;
 import com.xml.generation.test.invoice_xml_generator_test.repository.InvoiceRepository;
 import com.xml.generation.test.invoice_xml_generator_test.utils.XmlDecoder;
@@ -23,12 +24,14 @@ import java.util.stream.Stream;
  public class StreamPublisher {
 
     private final InvoiceRepository invoiceRepository;
+    private final MinioStorageService minioStorageService;
+
 
     @Value("${publisher.path}")
     private String folderPath;
 
     @Transactional
-    public void publishToDesktop() {
+    public void publishInvoiceXml() {
         CustomLogging.logInfo(null, null, null, "Starting invoice stream publish to desktop");
 
         try (Stream<Invoice> stream = invoiceRepository.findInvoicesStream()) {
@@ -47,8 +50,10 @@ import java.util.stream.Stream;
                     String issueMonth = date.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH));
                     String issueDay   = String.format("%02d", date.getDayOfMonth());
 
-                    Path directory = Paths.get(folderPath, taxNumber, issueYear, issueMonth, issueDay);
-                    Files.createDirectories(directory);
+                    //======SAVE TO FILE
+//                    Path directory = Paths.get(folderPath, taxNumber, issueYear, issueMonth, issueDay);
+//                    Files.createDirectories(directory);
+
 
                     String encodedXml = XmlDecoder.resolveXml(new String(inv.getXmlFile(), StandardCharsets.UTF_8));
 
@@ -58,14 +63,27 @@ import java.util.stream.Stream;
                         return;
                     }
 
-                    String fileName = String.format("%s_%s.xml",
+                    String objectKey = String.format("%s/%s/%s/%s/%s_%s.xml",
+                            taxNumber, issueYear, issueMonth, issueDay,
                             inv.getInvoiceUniqueIdentifier(), invoiceNumber);
 
-                    Path savedPath = directory.resolve(fileName);
-                    Files.writeString(savedPath, encodedXml);
+                    minioStorageService.uploadObject(
+                            objectKey,
+                            encodedXml.getBytes(StandardCharsets.UTF_8),
+                            "application/xml"
+                    );
+
+
+
+                    //======SAVE TO FILE
+//                    String fileName = String.format("%s_%s.xml",
+//                            inv.getInvoiceUniqueIdentifier(), invoiceNumber);
+//
+//                    Path savedPath = directory.resolve(fileName);
+//                    Files.writeString(savedPath, encodedXml);
 
                     CustomLogging.logInfo(taxNumber, invoiceNumber, invoiceId,
-                            "Saved invoiceId={} to {}", invoiceId, savedPath);
+                            "Saved invoiceId={} to {}", invoiceId, objectKey);
 
                 } catch (Exception e) {
                     CustomLogging.logError("PUBLISH_FAILED", invoiceId,
