@@ -1,6 +1,6 @@
 package com.xml.generation.test.invoice_xml_generator_test.model.dto;
 
-import com.xml.generation.test.invoice_xml_generator_test.model.lookup.AdditionalBuyerIdTypeLookupDto;
+import com.xml.generation.test.invoice_xml_generator_test.model.enums.AdditionalBuyerIdType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,11 +13,7 @@ public class BuyerDTO {
     private String buyerName;
     private String postalCode;
     private String phoneNumber;
-    private AdditionalBuyerIdTypeLookupDto additionalBuyerIdTypeLookupDto;
+    private AdditionalBuyerIdType additionalBuyerIdType;
     private String additionalBuyerId;
-    private String additionalBuyerIdTn;
-    private String additionalBuyerIdSin;
     private ProvinceDTO provinceDTO;
-
-
 }

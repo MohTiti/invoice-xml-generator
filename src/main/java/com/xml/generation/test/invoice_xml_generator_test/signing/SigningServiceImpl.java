@@ -1,6 +1,6 @@
 package com.xml.generation.test.invoice_xml_generator_test.signing;
 
-import com.xml.generation.test.invoice_xml_generator_test.model.entity.Invoice;
+import com.xml.generation.test.invoice_xml_generator_test.model.data.Invoice;
 import com.xml.generation.test.invoice_xml_generator_test.signing.model.DigitalSignature;
 import com.xml.generation.test.invoice_xml_generator_test.signing.model.InvoiceSigningResult;
 import com.xml.generation.test.invoice_xml_generator_test.signing.util.InvoiceXmlXPath;

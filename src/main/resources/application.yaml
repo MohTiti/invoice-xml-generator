@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:oracle:thin:@${SSERVER:192.168.1.10}:${SPORT:1521}/${SDB:FREE}
-    username: ${DB_USERNAME:C##MDEIUSER}
-    password: ${DB_PASSWORD:MDEIPASS}
+    url: jdbc:oracle:thin:@${SSERVER:192.168.1.10}:${SPORT:1521}/${SDB:FREEPDB1}
+    username: ${DB_USERNAME:MDEIUSER}
+    password: ${DB_PASSWORD:einvoice@123}
     driver-class-name: oracle.jdbc.OracleDriver
   jpa:
     hibernate:
@@ -18,7 +18,7 @@ program:
 #types :  PUBLISH, GENERATE
 
 xml-gen:
-  invoice-id: 987701
+  invoice-id: 1833496250
   is-staging: '${XML_GEN_IS_STAGING:false}'
 
 qr:

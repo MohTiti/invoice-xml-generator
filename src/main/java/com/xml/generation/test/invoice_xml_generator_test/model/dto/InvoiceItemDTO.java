@@ -2,7 +2,6 @@ package com.xml.generation.test.invoice_xml_generator_test.model.dto;
 
 import com.xml.generation.test.invoice_xml_generator_test.model.enums.GeneralTaxType;
 import com.xml.generation.test.invoice_xml_generator_test.model.enums.InvoiceItemTypeEnum;
-import com.xml.generation.test.invoice_xml_generator_test.model.lookup.LuIsic4Dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,11 +18,9 @@ public class InvoiceItemDTO implements Serializable {
     private int index;
     private String productDescription;
     private String isic4;
-    private LuIsic4Dto isic4Dto;
     private InvoiceItemTypeEnum invoiceItemType;
     private GeneralTaxType generalTaxType;
     private BigDecimal quantity;
-    private BigDecimal newQuantity;
     private BigDecimal unitPrice;
     private BigDecimal subtotalAmount;
     private BigDecimal discountAmount;
@@ -34,9 +31,5 @@ public class InvoiceItemDTO implements Serializable {
     private BigDecimal totalAmountAfterTaxes;
     private BigDecimal customerPrice;
     private BigDecimal totalAfterSpecialTax = new BigDecimal(BigInteger.ZERO);
-    private String standardItemIdentification;
-    private String sellerItemIdentification;
-    private String reasonOfExemption;
-
 
 }

@@ -2,7 +2,7 @@ package com.xml.generation.test.invoice_xml_generator_test.tasks;
 
 import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import com.xml.generation.test.invoice_xml_generator_test.minio.serivce.MinioStorageService;
-import com.xml.generation.test.invoice_xml_generator_test.model.entity.Invoice;
+import com.xml.generation.test.invoice_xml_generator_test.model.data.Invoice;
 import com.xml.generation.test.invoice_xml_generator_test.repository.InvoiceRepository;
 import com.xml.generation.test.invoice_xml_generator_test.utils.XmlDecoder;
 import lombok.RequiredArgsConstructor;

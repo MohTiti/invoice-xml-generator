@@ -1,7 +1,6 @@
 package com.xml.generation.test.invoice_xml_generator_test.converter;
 
-import com.beust.jcommander.internal.Maps;
-import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
+import com.google.common.collect.Maps;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.MultiFormatWriter;
@@ -10,21 +9,18 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.xml.generation.test.invoice_xml_generator_test.exception.FailedToGenerateQRImageException;
+import com.xml.generation.test.invoice_xml_generator_test.model.data.*;
 import com.xml.generation.test.invoice_xml_generator_test.model.dto.*;
-import com.xml.generation.test.invoice_xml_generator_test.model.entity.*;
-import com.xml.generation.test.invoice_xml_generator_test.model.lookup.*;
-import com.xml.generation.test.invoice_xml_generator_test.model.lookup.Currency;
-import com.xml.generation.test.invoice_xml_generator_test.service.impl.LookupFacade;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.util.*;
 
 @Component
 public class InvoiceReverseConverter {
+    //Converting from entity to dto
     public InvoiceDTO entityToDto(Invoice invoice) throws FailedToGenerateQRImageException {
         InvoiceDTO invoiceDTO = new InvoiceDTO();
         invoiceDTO.setBuyerDTO(populateBuyerData(invoice.getBuyer()));
@@ -44,10 +40,6 @@ public class InvoiceReverseConverter {
             invoiceItemDTO.setUuid(invoiceItem.getUuid());
             invoiceItemDTO.setIndex(invoiceItem.getIndex());
             invoiceItemDTO.setIsic4(invoiceItem.getIsic4());
-            if(invoiceItem.getIsic4() != null){
-                invoiceItemDTO.setIsic4Dto(LookupFacade.getIsic4Dto(invoiceItem.getIsic4()));
-            }
-            invoiceItemDTO.setIsic4(invoiceItem.getIsic4());
             invoiceItemDTO.setInvoiceItemType(invoiceItem.getInvoiceItemType());
             invoiceItemDTO.setProductDescription(invoiceItem.getProductDescription());
             invoiceItemDTO.setQuantity(invoiceItem.getQuantity());
@@ -62,14 +54,13 @@ public class InvoiceReverseConverter {
             invoiceItemDTO.setGeneralTaxAmount(invoiceItem.getGeneralTaxAmount());
             invoiceItemDTO.setTotalAmountAfterTaxes(invoiceItem.getTotalAmountAfterTaxes());
             invoiceItemDTO.setTotalAfterSpecialTax(invoiceItem.getTotalAfterSpecialTax());
-            invoiceItemDTO.setStandardItemIdentification(invoiceItem.getStandardItemIdentification());
-            invoiceItemDTO.setSellerItemIdentification(invoiceItem.getSellerItemIdentification());
             invoiceItemDTOList.add(invoiceItemDTO);
 
         }
         List<InvoiceItemDTO> invoiceItemDTOSortedList = new ArrayList<>(invoiceItemDTOList);
         invoiceItemDTOSortedList.sort(Comparator.comparing(InvoiceItemDTO::getIndex));
         return invoiceItemDTOSortedList;
+//        return invoiceItemDTOList;
     }
 
     private SellerDTO populateSellerData(Taxpayer taxpayer) {
@@ -93,16 +84,10 @@ public class InvoiceReverseConverter {
 
     private BuyerDTO populateBuyerData(Buyer buyer) {
         BuyerDTO buyerDTO = new BuyerDTO();
-        AdditionalBuyerIdType luAdditionalBuyerIdTypeDto = null;
         if(buyer != null) {
-            if(buyer.getAdditionalBuyerIdType() != null){
-                luAdditionalBuyerIdTypeDto = LookupFacade.getAdditionalBuyerIdType(buyer.getAdditionalBuyerIdType());
-            }
             buyerDTO.setBuyerName(buyer.getBuyerName());
             buyerDTO.setAdditionalBuyerId(buyer.getAdditionalBuyerId());
-            buyerDTO.setAdditionalBuyerIdTypeLookupDto((luAdditionalBuyerIdTypeDto != null) ? new AdditionalBuyerIdTypeLookupDto(luAdditionalBuyerIdTypeDto.getCode() , luAdditionalBuyerIdTypeDto.getArabicDescription() , luAdditionalBuyerIdTypeDto.getEnglishDescription(), false): null);
-            buyerDTO.setAdditionalBuyerIdTn(buyer.getAdditionalBuyerIdTn());
-            buyerDTO.setAdditionalBuyerIdSin(buyer.getAdditionalBuyerIdSin());
+            buyerDTO.setAdditionalBuyerIdType(buyer.getAdditionalBuyerIdType());
             buyerDTO.setPhoneNumber(buyer.getPhoneNumber());
             buyerDTO.setPostalCode(buyer.getPostalCode());
             if (buyer.getProvince() != null) {
@@ -116,48 +101,122 @@ public class InvoiceReverseConverter {
     }
 
     private void populateInvoiceDetails(InvoiceDTO invoiceDTO, Invoice invoice) throws FailedToGenerateQRImageException {
-        invoiceDTO.setInvoiceNumber(invoice.getInvoiceNumber());
-        invoiceDTO.setInvoiceStatus(invoice.getInvoiceStatus());
-        invoiceDTO.setInvoiceTypeCode(invoice.getInvoiceTypeCode());
-        invoiceDTO.setExemptionReason(invoice.getExemptionReason());
-        invoiceDTO.setReasonOfExemption(invoice.getExemptionReason());
-        invoiceDTO.setIssueDate(invoice.getIssueDate().toLocalDate());
-        invoiceDTO.setIssueTime(invoice.getIssueTime());
-        invoiceDTO.setBuyerInvoiceNumber(invoice.getBuyerInvoiceNumber());
-        invoiceDTO.setInvoiceUniqueIdentifier(invoice.getInvoiceUniqueIdentifier());
-        invoiceDTO.setQrCode(invoice.getQrCode());
-        BigDecimal generalTaxes = (invoice.getTotalGeneralTaxesAmount()!= null) ? invoice.getTotalGeneralTaxesAmount() : BigDecimal.ZERO;
-        invoiceDTO.setTotalTaxes(generalTaxes.add((invoice.getTotalSpecialTaxesAmount()!= null) ? invoice.getTotalSpecialTaxesAmount() : BigDecimal.ZERO));
-        invoiceDTO.setRequestFrom(invoice.getRequestFromEnum());
-        if(invoice.getQrCode() != null) {
+
+        // Basic invoice details with null checks
+        if (invoice.getInvoiceNumber() != null) {
+            invoiceDTO.setInvoiceNumber(invoice.getInvoiceNumber());
+        }
+
+        if (invoice.getInvoiceStatus() != null) {
+            invoiceDTO.setInvoiceStatus(invoice.getInvoiceStatus());
+        }
+
+        if (invoice.getInvoiceTypeCode() != null) {
+            invoiceDTO.setInvoiceTypeCode(invoice.getInvoiceTypeCode());
+        }
+
+        if (invoice.getIssueDate() != null) {
+            invoiceDTO.setIssueDate(invoice.getIssueDate().toLocalDate());
+        }
+
+        if (invoice.getBuyerInvoiceNumber() != null) {
+            invoiceDTO.setBuyerInvoiceNumber(invoice.getBuyerInvoiceNumber());
+        }
+
+        if (invoice.getInvoiceUniqueIdentifier() != null) {
+            invoiceDTO.setInvoiceUniqueIdentifier(invoice.getInvoiceUniqueIdentifier());
+        }
+
+        if (invoice.getQrCode() != null) {
+            invoiceDTO.setQrCode(invoice.getQrCode());
+        }
+
+        // Calculate total taxes with null checks
+        if (invoice.getTotalGeneralTaxesAmount() != null && invoice.getTotalSpecialTaxesAmount() != null) {
+            invoiceDTO.setTotalTaxes(invoice.getTotalGeneralTaxesAmount().add(invoice.getTotalSpecialTaxesAmount()));
+        } else if (invoice.getTotalGeneralTaxesAmount() != null) {
+            invoiceDTO.setTotalTaxes(invoice.getTotalGeneralTaxesAmount());
+        } else if (invoice.getTotalSpecialTaxesAmount() != null) {
+            invoiceDTO.setTotalTaxes(invoice.getTotalSpecialTaxesAmount());
+        }
+
+        if (invoice.getRequestFromEnum() != null) {
+            invoiceDTO.setRequestFrom(invoice.getRequestFromEnum());
+        }
+
+        // QR Code image generation (already had null check)
+        if (invoice.getQrCode() != null) {
             invoiceDTO.setQrCodeImage(getQRImage(invoice.getQrCode()));
         }
-        if(invoice.getXmlFile() != null){
+
+        // XML file processing (already had null check)
+        if (invoice.getXmlFile() != null) {
             byte[] xmlFileBytes = invoice.getXmlFile();
             String xmlFileString = new String(xmlFileBytes, StandardCharsets.UTF_8);
             invoiceDTO.setXml(xmlFileString);
         }
-        Lu_InvoiceType luInvoiceTypeDTO = LookupFacade.getInvoiceType(invoice.getInvoiceKind());
-        invoiceDTO.setInvoiceTypeLookupDto(new InvoiceTypeLookupDto(luInvoiceTypeDTO.getCode() , luInvoiceTypeDTO.getArabicDescription() , luInvoiceTypeDTO.getEnglishDescription() , (luInvoiceTypeDTO.getAllowedPercentage()== null) ? null : luInvoiceTypeDTO.getAllowedPercentage()));
-        Currency luCurrency = LookupFacade.getCurrency(invoice.getCurrency());
-        invoiceDTO.setCurrencyEnum(luCurrency.getCurrencyEnum());
-        invoiceDTO.setCurrencyLookupDto(new CurrencyLookupDto(luCurrency.getCurrencyEnum() , luCurrency.getArabicDescription() , luCurrency.getEnglishDescription()));
-        invoiceDTO.setNotes(invoice.getNotes());
-        invoiceDTO.setNoteType(invoice.getNoteType());
-        invoiceDTO.setReasonOfNote(invoice.getReasonOfNote());
-        if(invoice.getOriginalInvoice() != null) {
-            invoiceDTO.setOriginalInvoiceNumber(invoice.getOriginalInvoice().getInvoiceNumber());
-            invoiceDTO.setOriginalInvoiceTotal(invoice.getOriginalInvoice().getTotalPayableAmount());
+
+        if (invoice.getInvoiceKind() != null) {
+            invoiceDTO.setInvoiceKind(invoice.getInvoiceKind());
         }
-        invoiceDTO.setNoteType(invoice.getNoteType());
-        invoiceDTO.setTotalAmountExcludingTaxes(invoice.getTotalExcludingTaxes());
-        invoiceDTO.setTotalDiscountsAmount(invoice.getTotalDiscountsAmount());
-        invoiceDTO.setTotalGeneralTaxesAmount(invoice.getTotalGeneralTaxesAmount());
-        invoiceDTO.setTotalSpecialTaxesAmount(invoice.getTotalSpecialTaxesAmount());
-        invoiceDTO.setTotalPayableAmount(invoice.getTotalPayableAmount());
-        invoiceDTO.setTotalAmountAfterSpecialTax(invoice.getTotalPayableAmount().subtract(invoice.getTotalGeneralTaxesAmount()));
-        invoiceDTO.setRate(invoice.getRate());
-        invoiceDTO.setRate_date(invoice.getRateDate());
+
+        if (invoice.getCurrency() != null) {
+            invoiceDTO.setCurrencyEnum(invoice.getCurrency());
+        }
+
+        if (invoice.getNotes() != null) {
+            invoiceDTO.setNotes(invoice.getNotes());
+        }
+
+        if (invoice.getNoteType() != null) {
+            invoiceDTO.setNoteType(invoice.getNoteType());
+        }
+
+        if (invoice.getReasonOfNote() != null) {
+            invoiceDTO.setReasonOfNote(invoice.getReasonOfNote());
+        }
+
+        // Original invoice details with null checks
+        if (invoice.getOriginalInvoice() != null) {
+            if (invoice.getOriginalInvoice().getInvoiceNumber() != null) {
+                invoiceDTO.setOriginalInvoiceNumber(invoice.getOriginalInvoice().getInvoiceNumber());
+            }
+            if (invoice.getOriginalInvoice().getTotalPayableAmount() != null) {
+                invoiceDTO.setOriginalInvoiceTotal(invoice.getOriginalInvoice().getTotalPayableAmount());
+            }
+        }
+
+        // Financial amounts with null checks
+        if (invoice.getTotalExcludingTaxes() != null) {
+            invoiceDTO.setTotalAmountExcludingTaxes(invoice.getTotalExcludingTaxes());
+        }
+
+        if (invoice.getTotalDiscountsAmount() != null) {
+            invoiceDTO.setTotalDiscountsAmount(invoice.getTotalDiscountsAmount());
+        }
+
+        if (invoice.getTotalGeneralTaxesAmount() != null) {
+            invoiceDTO.setTotalGeneralTaxesAmount(invoice.getTotalGeneralTaxesAmount());
+        }
+
+        if (invoice.getTotalSpecialTaxesAmount() != null) {
+            invoiceDTO.setTotalSpecialTaxesAmount(invoice.getTotalSpecialTaxesAmount());
+        }
+
+        if (invoice.getTotalPayableAmount() != null) {
+            invoiceDTO.setTotalPayableAmount(invoice.getTotalPayableAmount());
+        }
+
+        if (invoice.getRate() != null) {
+            invoiceDTO.setRate(invoice.getRate());
+        }
+
+        if (invoice.getRateDate() != null) {
+            invoiceDTO.setRate_date(java.sql.Date.valueOf(invoice.getRateDate().toLocalDate()));
+        }
+        if(invoice.getSigned() != null){
+            invoiceDTO.setSignedInvoice(invoice.getSigned());
+        }
     }
     private String getQRImage(String qrCode) throws FailedToGenerateQRImageException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -172,12 +231,8 @@ public class InvoiceReverseConverter {
                     BarcodeFormat.QR_CODE, 200, 200, hintMap);
             MatrixToImageWriter.writeToStream(matrix, "png", byteArrayOutputStream);
         } catch (IOException e) {
-            CustomLogging.logError("QR_IMAGE_FAILED", null,
-                    "Failed to generate QR image (IO): {}", e.getMessage());
             throw new FailedToGenerateQRImageException();
         } catch (WriterException e) {
-            CustomLogging.logError("QR_IMAGE_FAILED", null,
-                    "Failed to generate QR image (Writer): {}", e.getMessage());
             throw new FailedToGenerateQRImageException();
         }
         return "data:image/png;base64," + Base64.getEncoder().encodeToString(byteArrayOutputStream.toByteArray());
