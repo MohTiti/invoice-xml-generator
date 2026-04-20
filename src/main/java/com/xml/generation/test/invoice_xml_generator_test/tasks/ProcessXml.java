@@ -119,7 +119,7 @@ public class ProcessXml {
         CustomLogging.logInfo(null, null, testInvoiceId, "Fetching invoiceId={}", testInvoiceId);
         long start = System.currentTimeMillis();
 
-        Invoice invoice = invoiceRepository.findById(testInvoiceId)
+        Invoice invoice = invoiceRepository.findByIdNative(testInvoiceId)
                 .orElseThrow(() -> {
                     CustomLogging.logError("INVOICE_NOT_FOUND", testInvoiceId,
                             "Invoice not found for id={}", testInvoiceId);

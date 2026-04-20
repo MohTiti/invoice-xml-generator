@@ -18,6 +18,8 @@ public class InvoiceXmlGenRunner implements CommandLineRunner {
     @Value("${program.task-type}")
     private String taskType;
 
+
+
     @Override
     public void run(String... args) {
         CustomLogging.logInfo(null, null, null, "InvoiceXmlGenRunner started");

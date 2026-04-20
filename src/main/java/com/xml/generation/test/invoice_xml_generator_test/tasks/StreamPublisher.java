@@ -11,12 +11,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 @Component
@@ -30,12 +28,17 @@ import java.util.stream.Stream;
     @Value("${publisher.path}")
     private String folderPath;
 
+    @Value("${publisher.taxpayer}")
+    private String taxPayer;
+
     @Transactional
     public void publishInvoiceXml() {
+        AtomicInteger invoiceCount = new AtomicInteger();
         CustomLogging.logInfo(null, null, null, "Starting invoice stream publish to desktop");
 
-        try (Stream<Invoice> stream = invoiceRepository.findInvoicesStream()) {
+        try (Stream<Invoice> stream = invoiceRepository.findInvoicesStream(taxPayer)) {
             stream.forEach(inv -> {
+                invoiceCount.getAndIncrement();
                 Long invoiceId = inv.getInvoiceId();
                 try {
                     String taxNumber     = inv.getUser().getTaxpayer().getTaxNumber();
@@ -55,13 +58,23 @@ import java.util.stream.Stream;
 //                    Files.createDirectories(directory);
 
 
-                    String encodedXml = XmlDecoder.resolveXml(new String(inv.getXmlFile(), StandardCharsets.UTF_8));
 
-                    if (encodedXml == null) {
+                     //todo save the invoice xml file as initial
+                    String encodedXml = "";
+                    try {
+                    encodedXml= XmlDecoder.resolveXml(new String(inv.getXmlFile(), StandardCharsets.UTF_8));
+
+                    } catch (Exception e )
+                    {
                         CustomLogging.logError("XML_UNRESOLVABLE", invoiceId,
                                 "Skipping invoiceId={} — xml_file could not be decoded", invoiceId);
-                        return;
+
                     }
+//                    if (encodedXml == null) {
+//                        CustomLogging.logError("XML_UNRESOLVABLE", invoiceId,
+//                                "Skipping invoiceId={} — xml_file could not be decoded", invoiceId);
+//                        return;
+//                    }
 
                     String objectKey = String.format("%s/%s/%s/%s/%s_%s.xml",
                             taxNumber, issueYear, issueMonth, issueDay,
@@ -92,6 +105,6 @@ import java.util.stream.Stream;
             });
         }
 
-        CustomLogging.logInfo(null, null, null, "Invoice stream publish completed");
+        CustomLogging.logInfo(null, null, null, "Invoice stream publish completed {}", invoiceCount);
     }
 }

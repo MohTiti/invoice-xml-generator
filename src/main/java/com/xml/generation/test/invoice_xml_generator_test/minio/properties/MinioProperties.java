@@ -1,4 +1,4 @@
-package com.xml.generation.test.invoice_xml_generator_test.properties;
+package com.xml.generation.test.invoice_xml_generator_test.minio.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

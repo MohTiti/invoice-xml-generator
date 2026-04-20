@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${DB_URL:jdbc:oracle:thin:@//localhost:1521/FREE}
+    url: jdbc:oracle:thin:@${SSERVER:192.168.1.10}:${SPORT:1521}/${SDB:FREE}
     username: ${DB_USERNAME:C##MDEIUSER}
-    password: ${DB_PASSWORD:devpass123}
+    password: ${DB_PASSWORD:MDEIPASS}
     driver-class-name: oracle.jdbc.OracleDriver
   jpa:
     hibernate:
@@ -13,12 +13,13 @@ spring:
         format_sql: true
 
 program:
-  task-type: '${TASK_TYPE:PUBLISH}'
+#  task-type: '${TASK_TYPE:PUBLISH}'
+  task-type: '${TASK_TYPE:GENERATE}'
 #types :  PUBLISH, GENERATE
 
 xml-gen:
-  invoice-id: 990653
-  is-staging: '${XML_GEN_IS_STAGINH:true}'
+  invoice-id: 987701
+  is-staging: '${XML_GEN_IS_STAGING:false}'
 
 qr:
   signing:
@@ -39,6 +40,7 @@ signing:
 # todo remove later on
 publisher:
   path: '${PUBLISHER_PATH:C:\Users\USER\OneDrive - readytech\Desktop\I&R}'
+  taxpayer: '${TAXPAYER:777777773}'
 
 
 minio:

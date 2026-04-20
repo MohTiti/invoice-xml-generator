@@ -3,7 +3,7 @@ package com.xml.generation.test.invoice_xml_generator_test.model.lookup;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "lu_isic4")
+@Table(name = "lu_isic_4")
 public class Isic4Lookup {
 
     @Id

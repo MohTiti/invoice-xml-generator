@@ -1,6 +1,6 @@
 package com.xml.generation.test.invoice_xml_generator_test.minio.config;
 
-import com.xml.generation.test.invoice_xml_generator_test.properties.MinioProperties;
+import com.xml.generation.test.invoice_xml_generator_test.minio.properties.MinioProperties;
 import io.minio.MinioClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

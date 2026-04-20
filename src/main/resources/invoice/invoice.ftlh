@@ -26,7 +26,7 @@
   </#if>
   <cac:AdditionalDocumentReference>
     <cbc:ID>ICV</cbc:ID>
-    <cbc:UUID>${invoiceCounter}</cbc:UUID>
+    <cbc:UUID></cbc:UUID>
   </cac:AdditionalDocumentReference>
   <cac:AccountingSupplierParty>
     <cac:Party>

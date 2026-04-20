@@ -1,6 +1,6 @@
 package com.xml.generation.test.invoice_xml_generator_test.minio.serivce;
 
-import com.xml.generation.test.invoice_xml_generator_test.properties.MinioProperties;
+import com.xml.generation.test.invoice_xml_generator_test.minio.properties.MinioProperties;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.http.Method;

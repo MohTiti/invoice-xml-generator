@@ -91,15 +91,20 @@ public class XmlRegenerationService {
         //    QR is built from the canonicalized XML, same as SME
         //todo ============ only for zero-invoices ===========
         String qrCode;
-        try {
-            qrCode = qrGeneratorService.generateQRstatically(canonicalXml);
-            CustomLogging.logInfo(taxNumber, invoiceNumber, invoice.getId(),
-                    "QR generated for invoiceId={}", invoice.getId());
-        } catch (Exception e) {
-            CustomLogging.logError("QR_FAILED", invoice.getId(),
-                    "QR generation failed for invoiceId={}: {}", invoice.getId(), e.getMessage());
-            throw new RuntimeException(
-                    "QR generation failed for invoiceId=" + invoice.getId() + ": " + e.getMessage(), e);
+        if ( invoice.getQrCode().isBlank()){
+            try {
+                qrCode = qrGeneratorService.generateQRstatically(canonicalXml);
+                CustomLogging.logInfo(taxNumber, invoiceNumber, invoice.getId(),
+                        "QR generated for invoiceId={}", invoice.getId());
+            } catch (Exception e) {
+                CustomLogging.logError("QR_FAILED", invoice.getId(),
+                        "QR generation failed for invoiceId={}: {}", invoice.getId(), e.getMessage());
+                throw new RuntimeException(
+                        "QR generation failed for invoiceId=" + invoice.getId() + ": " + e.getMessage(), e);
+            }
+
+        }else {
+            qrCode = invoice.getQrCode();
         }
 
         // ── 7. Call signing service  (SME: invoiceSigningForSme step) ──────
