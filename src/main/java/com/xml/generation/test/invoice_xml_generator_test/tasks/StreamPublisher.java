@@ -25,6 +25,7 @@ public class StreamPublisher {
 
     private final InvoiceRepository invoiceRepository;
     private final MinioStorageService minioStorageService;
+    private final ProcessXml processXml;
 
     @Value("${publisher.taxpayer}")
     private String taxPayer;
@@ -32,7 +33,7 @@ public class StreamPublisher {
     @Transactional
     public void publishInvoiceXml() {
         AtomicInteger invoiceCount = new AtomicInteger();
-        CustomLogging.logInfo(null, null, null, "Starting invoice stream publish to desktop");
+        CustomLogging.logInfo(null, null, null, "Starting invoice stream publishing");
 
         try (Stream<Invoice> stream = invoiceRepository.findInvoicesStream(taxPayer)) {
             stream.forEach(inv -> {
@@ -51,15 +52,21 @@ public class StreamPublisher {
                     String issueMonth = date.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH));
                     String issueDay = String.format("%02d", date.getDayOfMonth());
 
-                    String encodedXml = "";
-
-                    //TODO add the xml generation
-                    try {
-                        encodedXml = XmlDecoder.resolveXml(new String(inv.getXmlFile(), StandardCharsets.UTF_8), inv.getInvoiceId());
-
-                    } catch (Exception e) {
-                        CustomLogging.logError("XML_UNRESOLVABLE", invoiceId,
-                                "Skipping invoiceId={} — xml_file could not be decoded", invoiceId);
+                    byte[] xmlToUpload;
+                    if (inv.getXmlFile() == null) {
+                        CustomLogging.logInfo(taxNumber, invoiceNumber, invoiceId,
+                                "No stored XML for invoiceId={}, regenerating", invoiceId);
+                        xmlToUpload = processXml.processInvoiceForPublisher(inv).xmlBytes();
+                    } else {
+                        String invoiceXml = new String(inv.getXmlFile(), StandardCharsets.UTF_8);
+                        String resolved = XmlDecoder.resolveXml(invoiceXml, invoiceId);
+                        if (resolved == null) {
+                            CustomLogging.logInfo(taxNumber, invoiceNumber, invoiceId,
+                                    "Stored XML unresolvable for invoiceId={}, regenerating", invoiceId);
+                            xmlToUpload = processXml.processInvoiceForPublisher(inv).xmlBytes();
+                        } else {
+                            xmlToUpload = resolved.getBytes(StandardCharsets.UTF_8);
+                        }
                     }
 
                     String objectKey = String.format("%s/%s/%s/%s/%s_%s.xml",
@@ -70,7 +77,7 @@ public class StreamPublisher {
                             objectKey,
                             inv.getInvoiceId(),
                             inv.getInvoiceNumber(),
-                            encodedXml.getBytes(StandardCharsets.UTF_8),
+                            xmlToUpload,
                             "application/xml"
                     );
 

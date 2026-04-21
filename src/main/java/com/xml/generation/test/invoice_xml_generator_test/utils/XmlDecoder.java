@@ -28,7 +28,7 @@ public class XmlDecoder {
         return null;
     }
 
-    private static boolean looksLikeXml(String content) {
-        return content.startsWith("<");
+    public static boolean looksLikeXml(String content) {
+        return content != null && content.trim().startsWith("<");
     }
 }

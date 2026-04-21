@@ -2,6 +2,7 @@ package com.xml.generation.test.invoice_xml_generator_test.tasks;
 
 import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import com.xml.generation.test.invoice_xml_generator_test.model.data.Invoice;
+import com.xml.generation.test.invoice_xml_generator_test.model.record.XmlGenerationResult;
 import com.xml.generation.test.invoice_xml_generator_test.repository.InvoiceRepository;
 import com.xml.generation.test.invoice_xml_generator_test.service.impl.XmlRegenerationService;
 import lombok.RequiredArgsConstructor;
@@ -35,12 +36,16 @@ public class ProcessXml {
         }
 
         try {
-            String signedXml = generateXml(invoice);
-            saveToFile(invoice.getInvoiceNumber(), invoice.getInvoiceId(), signedXml);
+            XmlGenerationResult xml = generateXml(invoice);
+            saveToFile(invoice.getInvoiceNumber(), invoice.getInvoiceId(), xml.xmlString());
         } catch (Exception e) {
             CustomLogging.logError("INVOICE_PROCESSING_FAILED", invoice.getInvoiceId(),
                     "Processing failed for invoiceId={}, skipping: {}", invoice.getInvoiceId(), e.getMessage());
         }
+    }
+
+    public XmlGenerationResult processInvoiceForPublisher(Invoice invoice) throws Exception {
+        return generateXml(invoice);
     }
 
     private Invoice fetchInvoice() {
@@ -62,7 +67,7 @@ public class ProcessXml {
         return invoice;
     }
 
-    private String generateXml(Invoice invoice) throws Exception {
+    private XmlGenerationResult generateXml(Invoice invoice) throws Exception {
         String taxNumber = invoice.getUser().getTaxpayer().getTaxNumber();
         String invoiceNumber = invoice.getInvoiceNumber();
         Long invoiceId = invoice.getInvoiceId();
@@ -77,7 +82,7 @@ public class ProcessXml {
         long elapsed = System.currentTimeMillis() - start;
         CustomLogging.logInfo(taxNumber, invoiceNumber, invoiceId,
                 "XML generated for invoiceId={}, took={}ms", invoiceId, elapsed);
-        return xmlString;
+        return new XmlGenerationResult(xmlString, xmlBytes);
     }
 
     private void saveToFile(String invoiceNumber, Long invoiceId, String xmlString) throws Exception {
