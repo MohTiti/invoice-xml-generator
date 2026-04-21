@@ -5,10 +5,7 @@ import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import com.xml.generation.test.invoice_xml_generator_test.model.data.Invoice;
 import com.xml.generation.test.invoice_xml_generator_test.model.dto.InvoiceDTO;
 import com.xml.generation.test.invoice_xml_generator_test.model.enums.RequestFromEnum;
-import com.xml.generation.test.invoice_xml_generator_test.service.QrGeneratorService;
 import com.xml.generation.test.invoice_xml_generator_test.service.XMLGenerationService;
-import com.xml.generation.test.invoice_xml_generator_test.service.XmlCanonicalizer;
-import com.xml.generation.test.invoice_xml_generator_test.utils.XmlDecoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,32 +17,21 @@ import java.nio.charset.StandardCharsets;
 public class XmlRegenerationService {
 
     private final InvoiceReverseConverter invoiceReverseConverter;
-    private final XMLGenerationService    xmlGenerationService;
-    private final XmlCanonicalizer        xmlCanonicalizer;
-    private final QrGeneratorService      qrGeneratorService;
-    private final SigningCallerService    signingCallerService;
+    private final XMLGenerationService xmlGenerationService;
+    private final XmlCanonicalizer xmlCanonicalizer;
+    private final QrGeneratorService qrGeneratorService;
+    private final SigningCallerService signingCallerService;
 
     @Value("${signing.enabled}")
     private boolean signingEnabled;
 
-    public byte[] regenerateXml(Invoice invoice, boolean forceSigning) throws Exception {
+    public byte[] regenerateXml(Invoice invoice) throws Exception {
 
-        String taxNumber     = invoice.getUser().getTaxpayer().getTaxNumber();
+        String taxNumber = invoice.getUser().getTaxpayer().getTaxNumber();
         String invoiceNumber = invoice.getInvoiceNumber();
 
         CustomLogging.logInfo(taxNumber, invoiceNumber, invoice.getId(),
                 "Regenerating XML for invoiceId={}", invoice.getId());
-
-        // ── 1. Fetch LuInvoiceType ─────────────────────────────────────────
-//        Lu_InvoiceType luInvoiceType = LookupFacade.getInvoiceType(invoice.getInvoiceKind());
-//        LuInvoiceTypeDTO luInvoiceTypeDTO = new LuInvoiceTypeDTO(
-//                luInvoiceType.getCode(),
-//                luInvoiceType.getArabicDescription(),
-//                luInvoiceType.getEnglishDescription(),
-//                luInvoiceType.getXmlDigitReference(),
-//                luInvoiceType.getAllowedPercentage(),
-//                luInvoiceType.getEnabled()
-//        );
 
         // ── 2. Convert Invoice entity → InvoiceDTO ─────────────────────────
         InvoiceDTO invoiceDTO;
@@ -86,10 +72,8 @@ public class XmlRegenerationService {
         }
 
         // ── 6. Generate QR code  (SME: InvoiceQRGenerator step) ───────────
-        //    QR is built from the canonicalized XML, same as SME
-        //todo ============ only for zero-invoices ===========
         String qrCode;
-        if ( invoice.getQrCode().isBlank()){
+        if (invoice.getQrCode().isBlank()) {
             try {
                 qrCode = qrGeneratorService.generateQRstatically(canonicalXml);
                 CustomLogging.logInfo(taxNumber, invoiceNumber, invoice.getId(),
@@ -101,13 +85,13 @@ public class XmlRegenerationService {
                         "QR generation failed for invoiceId=" + invoice.getId() + ": " + e.getMessage(), e);
             }
 
-        }else {
+        } else {
             qrCode = invoice.getQrCode();
         }
 
         // ── 7. Call signing service  (SME: invoiceSigningForSme step) ──────
         //    POST { invoice: canonicalXml, qrCode } → signed XML
-        if (!signingEnabled && !forceSigning) {
+        if (!signingEnabled) {
             CustomLogging.logWarn("SIGNING_SKIPPED", taxNumber, invoiceNumber, invoice.getId(),
                     "Signing skipped (signing.enabled=false) for invoiceId={}", invoice.getId());
             return canonicalXml.getBytes(StandardCharsets.UTF_8);
@@ -127,26 +111,4 @@ public class XmlRegenerationService {
 
         return signedXml.getBytes(StandardCharsets.UTF_8);
     }
-
-    public byte[] regenerateXml(Invoice invoice) throws Exception {
-        return regenerateXml(invoice, false);
-    }
-//todo testing purposes
-    public boolean isSigned(byte[] xmlFile) {
-        if (xmlFile == null || xmlFile.length == 0) return false;
-
-        String content = new String(xmlFile, StandardCharsets.UTF_8).trim();
-
-        // corrupted / placeholder values
-        if (content.isEmpty() || content.equalsIgnoreCase("xml")) return false;
-
-        String xml = XmlDecoder.resolveXml(content);
-        if (xml == null) return false;
-
-        return xml.contains("<ds:Signature")
-                || xml.contains("<Signature")
-                || xml.contains("<sig:UBLDocumentSignatures");
-    }
-
-
 }

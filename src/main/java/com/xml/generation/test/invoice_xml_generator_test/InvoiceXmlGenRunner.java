@@ -18,13 +18,11 @@ public class InvoiceXmlGenRunner implements CommandLineRunner {
     @Value("${program.task-type}")
     private String taskType;
 
-
-
     @Override
     public void run(String... args) {
         CustomLogging.logInfo(null, null, null, "InvoiceXmlGenRunner started");
         if ("GENERATE".equals(taskType)) {
-            processXml.singleInvoice();
+            processXml.processInvoice();
         } else if ("PUBLISH".equals(taskType)) {
             streamPublisher.publishInvoiceXml();
         }

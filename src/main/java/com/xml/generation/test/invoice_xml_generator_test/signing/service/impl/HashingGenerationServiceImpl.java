@@ -1,6 +1,7 @@
-package com.xml.generation.test.invoice_xml_generator_test.signing;
+package com.xml.generation.test.invoice_xml_generator_test.signing.service.impl;
 
 import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
+import com.xml.generation.test.invoice_xml_generator_test.signing.service.HashingGenerationService;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

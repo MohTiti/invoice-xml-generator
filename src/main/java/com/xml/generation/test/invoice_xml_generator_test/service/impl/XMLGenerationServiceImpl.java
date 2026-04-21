@@ -76,7 +76,6 @@ public class XMLGenerationServiceImpl implements XMLGenerationService {
 
         }
 
-
         if(invoiceDTO.getNoteType() == null) {
             model.put("invoiceTypeValue", "388");
         } else if (NoteType.CREDIT_INVOICE.equals(invoiceDTO.getNoteType())) {
@@ -146,13 +145,10 @@ public class XMLGenerationServiceImpl implements XMLGenerationService {
         model.put("taxCategoriesMap", taxCategoriesMap);
         try {
             freemarkerTemplate.process(model, stringWriter);
-        } catch (TemplateException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (TemplateException | IOException e) {
             throw new RuntimeException(e);
         }
 
         return stringWriter.getBuffer().toString();
-
     }
 }

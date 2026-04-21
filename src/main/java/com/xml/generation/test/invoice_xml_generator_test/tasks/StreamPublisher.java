@@ -21,14 +21,10 @@ import java.util.stream.Stream;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "program.task-type", havingValue = "PUBLISH")
- public class StreamPublisher {
+public class StreamPublisher {
 
     private final InvoiceRepository invoiceRepository;
     private final MinioStorageService minioStorageService;
-
-
-    @Value("${publisher.path}")
-    private String folderPath;
 
     @Value("${publisher.taxpayer}")
     private String taxPayer;
@@ -43,40 +39,28 @@ import java.util.stream.Stream;
                 invoiceCount.getAndIncrement();
                 Long invoiceId = inv.getInvoiceId();
                 try {
-                    String taxNumber     = inv.getUser().getTaxpayer().getTaxNumber();
+                    String taxNumber = inv.getUser().getTaxpayer().getTaxNumber();
                     String invoiceNumber = inv.getInvoiceNumber();
 
                     CustomLogging.logInfo(taxNumber, invoiceNumber, invoiceId,
-                            "Processing invoiceId={}", invoiceId);
+                            "Publishing invoiceId={}", invoiceId);
 
-                    LocalDate date  = inv.getIssueDate().toLocalDate();
+                    LocalDate date = inv.getIssueDate().toLocalDate();
 
-                    String issueYear  = String.valueOf(date.getYear());
+                    String issueYear = String.valueOf(date.getYear());
                     String issueMonth = date.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH));
-                    String issueDay   = String.format("%02d", date.getDayOfMonth());
+                    String issueDay = String.format("%02d", date.getDayOfMonth());
 
-                    //======SAVE TO FILE
-//                    Path directory = Paths.get(folderPath, taxNumber, issueYear, issueMonth, issueDay);
-//                    Files.createDirectories(directory);
-
-
-
-                     //todo save the invoice xml file as initial
                     String encodedXml = "";
-                    try {
-                    encodedXml= XmlDecoder.resolveXml(new String(inv.getXmlFile(), StandardCharsets.UTF_8));
 
-                    } catch (Exception e )
-                    {
+                    //TODO add the xml generation
+                    try {
+                        encodedXml = XmlDecoder.resolveXml(new String(inv.getXmlFile(), StandardCharsets.UTF_8));
+
+                    } catch (Exception e) {
                         CustomLogging.logError("XML_UNRESOLVABLE", invoiceId,
                                 "Skipping invoiceId={} — xml_file could not be decoded", invoiceId);
-
                     }
-//                    if (encodedXml == null) {
-//                        CustomLogging.logError("XML_UNRESOLVABLE", invoiceId,
-//                                "Skipping invoiceId={} — xml_file could not be decoded", invoiceId);
-//                        return;
-//                    }
 
                     String objectKey = String.format("%s/%s/%s/%s/%s_%s.xml",
                             taxNumber, issueYear, issueMonth, issueDay,
@@ -84,18 +68,12 @@ import java.util.stream.Stream;
 
                     minioStorageService.uploadObject(
                             objectKey,
+                            inv.getInvoiceId(),
+                            inv.getInvoiceNumber(),
                             encodedXml.getBytes(StandardCharsets.UTF_8),
                             "application/xml"
                     );
 
-
-
-                    //======SAVE TO FILE
-//                    String fileName = String.format("%s_%s.xml",
-//                            inv.getInvoiceUniqueIdentifier(), invoiceNumber);
-//
-//                    Path savedPath = directory.resolve(fileName);
-//                    Files.writeString(savedPath, encodedXml);
 
                     CustomLogging.logInfo(taxNumber, invoiceNumber, invoiceId,
                             "Saved invoiceId={} to {}", invoiceId, objectKey);
@@ -107,6 +85,6 @@ import java.util.stream.Stream;
             });
         }
 
-        CustomLogging.logInfo(null, null, null, "Invoice stream publish completed {}", invoiceCount);
+        CustomLogging.logInfo(taxPayer, null, null, "Invoice stream publish completed {}", invoiceCount);
     }
 }

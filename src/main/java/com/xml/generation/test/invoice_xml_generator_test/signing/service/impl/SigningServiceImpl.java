@@ -1,11 +1,15 @@
-package com.xml.generation.test.invoice_xml_generator_test.signing;
+package com.xml.generation.test.invoice_xml_generator_test.signing.service.impl;
 
 import com.xml.generation.test.invoice_xml_generator_test.model.data.Invoice;
 import com.xml.generation.test.invoice_xml_generator_test.signing.model.DigitalSignature;
 import com.xml.generation.test.invoice_xml_generator_test.signing.model.InvoiceSigningResult;
+import com.xml.generation.test.invoice_xml_generator_test.signing.service.DigitalSignatureService;
+import com.xml.generation.test.invoice_xml_generator_test.signing.service.HashingGenerationService;
 import com.xml.generation.test.invoice_xml_generator_test.signing.util.InvoiceXmlXPath;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.Getter;
+import lombok.Setter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -45,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class SigningServiceImpl {
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
@@ -54,13 +57,11 @@ public class SigningServiceImpl {
     private static final DigitalSignatureService DIGITAL_SIGNATURE_SERVICE = new DigitalSignatureServiceImpl();
     private static final HashingGenerationService HASHING_GENERATION_SERVICE = new HashingGenerationServiceImpl();
 
-    // XSLT Templates — compiled once at startup, thread-safe for reading
     private Templates removeElementsTemplates;
     private Templates addUBLElementTemplates;
     private Templates addQRElementTemplates;
     private Templates addSignatureElementTemplates;
 
-    // XML fragment strings loaded from classpath resources
     private String ublElement;
     private String qrElement;
     private String signatureElement;
@@ -70,12 +71,18 @@ public class SigningServiceImpl {
     @Value("${signing.include-comment:false}")
     private boolean includeComment;
 
-    // Injected by SigningConfig
+    @Setter
+    @Getter
     private PrivateKey privateKey;
+
+    @Setter
+    @Getter
     private X509Certificate certificate;
+
+    @Setter
+    @Getter
     private String certificateAsString;
 
-    // Thread-local SAXReader — SAXReader is not thread-safe
     private final ThreadLocal<SAXReader> xmlReaderThreadLocal = new ThreadLocal<>() {
         @Override
         protected SAXReader initialValue() {
@@ -94,7 +101,6 @@ public class SigningServiceImpl {
         }
     };
 
-    // Thread-local MessageDigest — MessageDigest is not thread-safe
     private final ThreadLocal<MessageDigest> digestThreadLocal = new ThreadLocal<>() {
         @Override
         protected MessageDigest initialValue() {
@@ -199,7 +205,6 @@ public class SigningServiceImpl {
     public InvoiceSigningResult signDocument(String xmlDocument, String qrCode, Invoice invoice) throws Exception {
         InvoiceSigningResult result = new InvoiceSigningResult();
 
-        // Step 1: hash the canonical XML
         String invoiceHash;
         try {
             invoiceHash = HASHING_GENERATION_SERVICE.getInvoiceHash(xmlDocument);
@@ -210,7 +215,6 @@ public class SigningServiceImpl {
         }
         result.setInvoiceHash(invoiceHash);
 
-        // Step 2: ECDSA-sign the hash
         DigitalSignature digitalSignature;
         try {
             digitalSignature = DIGITAL_SIGNATURE_SERVICE.getDigitalSignature(xmlDocument, privateKey, invoiceHash);
@@ -220,10 +224,8 @@ public class SigningServiceImpl {
             throw new Exception("Unable to create digital signature: " + e.getMessage(), e);
         }
 
-        // Step 3: inject UBL extension, QR, and Signature scaffolding via XSLT
         String transformedXml = transformXML(xmlDocument);
 
-        // Step 4: parse to DOM4J and populate all placeholder values
         Document document = getXmlDocument(transformedXml);
 
         String certificateHashing = encodeBase64(
@@ -235,9 +237,8 @@ public class SigningServiceImpl {
         String signedPropertiesHashing = populateSignedSignatureProperties(
                 document,
                 certificateHashing,
-                //todo to edit time of singning
                 signingTimestamp,
-                certificate.getIssuerDN().getName(),
+                certificate.getIssuerX500Principal().getName(),
                 certificate.getSerialNumber().toString());
 
         populateUBLExtensions(
@@ -252,10 +253,6 @@ public class SigningServiceImpl {
         result.setSingedXML(document.asXML());
         return result;
     }
-
-    // -------------------------------------------------------------------------
-    // XSLT transformation pipeline
-    // -------------------------------------------------------------------------
 
     private String transformXML(String xmlDocument) throws TransformerException {
         xmlDocument = transformXml(xmlDocument, removeElementsTemplates);
@@ -283,10 +280,6 @@ public class SigningServiceImpl {
         return bos.toString(StandardCharsets.UTF_8);
     }
 
-    // -------------------------------------------------------------------------
-    // DOM4J population helpers
-    // -------------------------------------------------------------------------
-
     private void populateQRCode(Document document, String qrCode) {
         populateXmlElementText(document, InvoiceXmlXPath.INVOICE_QR_CODE, qrCode);
     }
@@ -300,10 +293,6 @@ public class SigningServiceImpl {
         populateXmlElementText(document, InvoiceXmlXPath.UBL_EXTENSIONS_SIGNATURE_XML_HASHING, xmlHashing);
     }
 
-    /**
-     * Populates the xades:SignedProperties fields, then hashes and base64-encodes the
-     * resulting XML node — exactly as the signing service does.
-     */
     private String populateSignedSignatureProperties(Document document, String publicKeyHashing,
                                                       String signatureTimestamp, String x509IssuerName,
                                                       String serialNumber) {
@@ -312,7 +301,7 @@ public class SigningServiceImpl {
         populateXmlElementText(document, InvoiceXmlXPath.SIGNED_PROPERTIES_X509_ISSUER_NAME, x509IssuerName);
         populateXmlElementText(document, InvoiceXmlXPath.SIGNED_PROPERTIES_X509_SERIAL_NUMBER, serialNumber);
 
-        String signedPropertiesXml = getNodeXmlValue(document, InvoiceXmlXPath.SIGNED_PROPERTIES);
+        String signedPropertiesXml = getNodeXmlValue(document);
         return encodeBase64(
                 bytesToHex(hashStringToBytes(signedPropertiesXml.getBytes(StandardCharsets.UTF_8)))
                         .getBytes(StandardCharsets.UTF_8));
@@ -322,14 +311,12 @@ public class SigningServiceImpl {
         XPath xpath = DocumentHelper.createXPath(xpathExpr);
         xpath.setNamespaceURIs(nameSpacesMap);
         List<Node> nodes = xpath.selectNodes(document);
-        IntStream.range(0, nodes.size())
-                .mapToObj(i -> (Element) nodes.get(i))
-                //todo control qr code text saving
+        nodes.stream().map(node -> (Element) node)
                 .forEach(el -> el.setText(value != null ? value : ""));
     }
 
-    private String getNodeXmlValue(Document document, String xpathExpr) {
-        XPath xpath = DocumentHelper.createXPath(xpathExpr);
+    private String getNodeXmlValue(Document document) {
+        XPath xpath = DocumentHelper.createXPath(InvoiceXmlXPath.SIGNED_PROPERTIES);
         xpath.setNamespaceURIs(nameSpacesMap);
         Node node = xpath.selectSingleNode(document);
         return node != null ? node.asXML() : null;
@@ -339,10 +326,6 @@ public class SigningServiceImpl {
         SAXReader reader = xmlReaderThreadLocal.get();
         return reader.read(new ByteArrayInputStream(xmlDocument.getBytes(StandardCharsets.UTF_8)));
     }
-
-    // -------------------------------------------------------------------------
-    // Crypto utilities
-    // -------------------------------------------------------------------------
 
     private byte[] hashStringToBytes(byte[] toBeHashed) {
         MessageDigest md = digestThreadLocal.get();
@@ -373,16 +356,4 @@ public class SigningServiceImpl {
         return DATE_TIME_FORMATTER.format(LocalDateTime.now());
     }
 
-    // -------------------------------------------------------------------------
-    // Getters / setters (set by SigningConfig)
-    // -------------------------------------------------------------------------
-
-    public PrivateKey getPrivateKey() { return privateKey; }
-    public void setPrivateKey(PrivateKey privateKey) { this.privateKey = privateKey; }
-
-    public X509Certificate getCertificate() { return certificate; }
-    public void setCertificate(X509Certificate certificate) { this.certificate = certificate; }
-
-    public String getCertificateAsString() { return certificateAsString; }
-    public void setCertificateAsString(String certificateAsString) { this.certificateAsString = certificateAsString; }
 }

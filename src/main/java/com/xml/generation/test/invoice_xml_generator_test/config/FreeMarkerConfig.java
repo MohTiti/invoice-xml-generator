@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ui.freemarker.FreeMarkerConfigurationFactoryBean;
-import org.springframework.web.client.RestTemplate;
 
 @Configuration
 public class FreeMarkerConfig {
@@ -28,10 +27,5 @@ public class FreeMarkerConfig {
         return freemarkerConfiguration
                 .getObject()
                 .getTemplate(template);
-    }
-
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
     }
 }

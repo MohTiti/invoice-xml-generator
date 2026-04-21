@@ -1,6 +1,7 @@
 package com.xml.generation.test.invoice_xml_generator_test.utils;
 
 import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
+
 import java.nio.charset.StandardCharsets;
 
 public class XmlDecoder {

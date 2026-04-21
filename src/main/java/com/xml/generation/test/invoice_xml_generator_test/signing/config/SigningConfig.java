@@ -1,5 +1,6 @@
-package com.xml.generation.test.invoice_xml_generator_test.signing;
+package com.xml.generation.test.invoice_xml_generator_test.signing.config;
 
+import com.xml.generation.test.invoice_xml_generator_test.signing.service.impl.SigningServiceImpl;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
@@ -21,28 +22,13 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 
-/**
- * Loads the EC private key and X.509 certificate from application properties,
- * then wires them into the embedded SigningServiceImpl bean.
- *
- * Properties required in application.yaml:
- *   signing.private.key  — raw EC private key PEM body (no header/footer lines)
- *   signing.certificate  — base64-encoded DER X.509 certificate
- */
 @Configuration
 @Order(1)
 public class SigningConfig {
 
-    /**
-     * EC private key PEM body, without the BEGIN/END header lines.
-     * Example: "MHQCAQEEIFac9R0XfZiC/..." (the raw base64 lines of the PEM)
-     */
     @Value("${signing.private.key}")
     private String signingPrivateKey;
 
-    /**
-     * Base64-encoded DER X.509 certificate (the PEM body without header/footer).
-     */
     @Value("${signing.certificate}")
     private String signingCertificateAsString;
 

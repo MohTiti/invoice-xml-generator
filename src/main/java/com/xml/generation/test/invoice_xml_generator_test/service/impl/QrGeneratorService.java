@@ -1,7 +1,8 @@
-package com.xml.generation.test.invoice_xml_generator_test.service;
+package com.xml.generation.test.invoice_xml_generator_test.service.impl;
 
 import com.payneteasy.tlv.BerTag;
 import com.payneteasy.tlv.BerTlvBuilder;
+import com.xml.generation.test.invoice_xml_generator_test.service.ProcessUtil;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,12 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.Base64;
 
-/**
- * Generates a BER-TLV encoded QR code string for a UBL invoice XML,
- * signed with ECDSA using the configured EC private key.
- *
- * Mirrors the SME's QrGeneratorService exactly.
- */
+
 @Service
 public class QrGeneratorService implements ProcessUtil {
 
@@ -44,7 +40,6 @@ public class QrGeneratorService implements ProcessUtil {
     @Value("${qr.generation.service.id}")
     private String qrGenerationServiceId;
 
-    // Loaded once at startup — avoid re-parsing PEM on every call
     private PrivateKey privateKey;
 
     @PostConstruct
@@ -52,16 +47,6 @@ public class QrGeneratorService implements ProcessUtil {
         this.privateKey = loadPrivateKey(privateKeyEncodedBase64);
     }
 
-    // -------------------------------------------------------------------------
-    // Public API
-    // -------------------------------------------------------------------------
-
-    /**
-     * Generates a base64-encoded BER-TLV QR code for the given invoice XML.
-     *
-     * @param invoiceXml raw UBL XML string (no XML declaration required)
-     * @return base64 string to embed in the invoice
-     */
     public String generateQRstatically(String invoiceXml)
             throws ParserConfigurationException, SAXException, IOException, XPathExpressionException {
 
@@ -94,10 +79,6 @@ public class QrGeneratorService implements ProcessUtil {
         return Base64.getEncoder().encodeToString(tlv.buildArray());
     }
 
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
-
     private PrivateKey loadPrivateKey(String base64Key) throws IOException {
         String pem = "-----BEGIN EC PRIVATE KEY-----\n"
                 + new String(Base64.getDecoder().decode(base64Key))
@@ -116,10 +97,8 @@ public class QrGeneratorService implements ProcessUtil {
         return db.parse(new InputSource(new StringReader(xml)));
     }
 
-    /** SHA-256 hash of the value string, returned as base64. */
     private String hashToBase64(String input) throws RuntimeException {
         try {
-            // Use a fresh MessageDigest instance per call — avoids shared-state bugs
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);
@@ -145,7 +124,6 @@ public class QrGeneratorService implements ProcessUtil {
         }
     }
 
-    /** Concatenates invoice fields in the order the SME uses for hashing. */
     private String toValueString(String invoiceNumber, String sellerName, String taxNumber,
                                   String issueDate, String invoiceTotal, String taxTotal) {
         return invoiceTotal + invoiceNumber + taxTotal + issueDate + taxNumber + sellerName;

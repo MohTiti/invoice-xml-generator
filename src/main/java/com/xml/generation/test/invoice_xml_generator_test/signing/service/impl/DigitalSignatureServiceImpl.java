@@ -1,7 +1,8 @@
-package com.xml.generation.test.invoice_xml_generator_test.signing;
+package com.xml.generation.test.invoice_xml_generator_test.signing.service.impl;
 
 import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import com.xml.generation.test.invoice_xml_generator_test.signing.model.DigitalSignature;
+import com.xml.generation.test.invoice_xml_generator_test.signing.service.DigitalSignatureService;
 
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
@@ -10,11 +11,6 @@ import java.util.Base64;
 
 public class DigitalSignatureServiceImpl implements DigitalSignatureService {
 
-    /**
-     * Signs the invoice XML hash with ECDSA using the supplied private key.
-     * The xmlHashing parameter is the base64-encoded SHA-256 hash of the XML.
-     * The signature is computed over the raw hash bytes (decoded from base64).
-     */
     @Override
     public DigitalSignature getDigitalSignature(String xmlDocument, PrivateKey privateKey, String xmlHashing) {
         final byte[] xmlHashingBytes = Base64.getDecoder().decode(xmlHashing.getBytes(StandardCharsets.UTF_8));
