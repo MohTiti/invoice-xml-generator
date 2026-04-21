@@ -1,5 +1,6 @@
 package com.xml.generation.test.invoice_xml_generator_test.service.impl;
 
+import ch.qos.logback.core.util.StringUtil;
 import com.xml.generation.test.invoice_xml_generator_test.converter.InvoiceReverseConverter;
 import com.xml.generation.test.invoice_xml_generator_test.logging.CustomLogging;
 import com.xml.generation.test.invoice_xml_generator_test.model.data.Invoice;
@@ -9,6 +10,7 @@ import com.xml.generation.test.invoice_xml_generator_test.service.QrGeneratorSer
 import com.xml.generation.test.invoice_xml_generator_test.service.XMLGenerationService;
 import com.xml.generation.test.invoice_xml_generator_test.service.XmlCanonicalizer;
 import com.xml.generation.test.invoice_xml_generator_test.utils.XmlDecoder;
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -89,7 +91,7 @@ public class XmlRegenerationService {
         //    QR is built from the canonicalized XML, same as SME
         //todo ============ only for zero-invoices ===========
         String qrCode;
-        if ( invoice.getQrCode().isBlank()){
+        if (StringUtils.isBlank(invoice.getQrCode())){
             try {
                 qrCode = qrGeneratorService.generateQRstatically(canonicalXml);
                 CustomLogging.logInfo(taxNumber, invoiceNumber, invoice.getId(),

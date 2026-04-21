@@ -28,6 +28,6 @@ public class XmlDecoder {
     }
 
     private static boolean looksLikeXml(String content) {
-        return content.startsWith("<");
+        return content != null && content.trim().startsWith("<");
     }
 }
