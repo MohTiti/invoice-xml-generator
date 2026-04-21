@@ -22,26 +22,28 @@ public class ProcessXml {
 
     private final InvoiceRepository invoiceRepository;
     private final XmlRegenerationService xmlRegenerationService;
-    @Value("${xml-gen.invoice-id}")
-    private Long testInvoiceId;
+//    @Value("${xml-gen.invoice-id}")
+//    private Long testInvoiceId;
 
-    public void singleInvoice() {
+    public String singleInvoice(Long invoiceId) {
         Invoice invoice = null;
+        String signedXml = "";
         try {
-            invoice = fetchInvoice();
+            invoice = fetchInvoice(invoiceId);
         } catch (Exception e) {
-            CustomLogging.logError("INVOICE_FETCH_FAILED", testInvoiceId,
-                    "Failed to fetch invoiceId={}: {}", testInvoiceId, e.getMessage());
-            return;
+            CustomLogging.logError("INVOICE_FETCH_FAILED", invoiceId,
+                    "Failed to fetch invoiceId={}: {}", invoiceId, e.getMessage());
+            return signedXml;
         }
 
         try {
-            String signedXml = generateXml(invoice);
-            saveToFile(invoice.getInvoiceNumber(), invoice.getInvoiceId(), signedXml);
+            signedXml = generateXml(invoice);
+//            saveToFile(invoice.getInvoiceNumber(), invoice.getInvoiceId(), signedXml);
         } catch (Exception e) {
             CustomLogging.logError("INVOICE_PROCESSING_FAILED", invoice.getInvoiceId(),
                     "Processing failed for invoiceId={}, skipping: {}", invoice.getInvoiceId(), e.getMessage());
         }
+        return signedXml;
     }
 
     public void tenRandomInvoice() throws Exception {
@@ -115,15 +117,15 @@ public class ProcessXml {
     }
 
 
-    private Invoice fetchInvoice() {
-        CustomLogging.logInfo(null, null, testInvoiceId, "Fetching invoiceId={}", testInvoiceId);
+    private Invoice fetchInvoice(Long invoiceId) {
+        CustomLogging.logInfo(null, null, invoiceId, "Fetching invoiceId={}", invoiceId);
         long start = System.currentTimeMillis();
 
-        Invoice invoice = invoiceRepository.findByIdNative(testInvoiceId)
+        Invoice invoice = invoiceRepository.findByIdNative(invoiceId)
                 .orElseThrow(() -> {
-                    CustomLogging.logError("INVOICE_NOT_FOUND", testInvoiceId,
-                            "Invoice not found for id={}", testInvoiceId);
-                    return new RuntimeException("Invoice not found: " + testInvoiceId);
+                    CustomLogging.logError("INVOICE_NOT_FOUND", invoiceId,
+                            "Invoice not found for id={}", invoiceId);
+                    return new RuntimeException("Invoice not found: " + invoiceId);
                 });
 
         long elapsed = System.currentTimeMillis() - start;

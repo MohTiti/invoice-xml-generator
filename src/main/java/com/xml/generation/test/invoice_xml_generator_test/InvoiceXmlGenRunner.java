@@ -6,10 +6,12 @@ import com.xml.generation.test.invoice_xml_generator_test.tasks.StreamPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "runner.enabled", havingValue = "true", matchIfMissing = false)
 public class InvoiceXmlGenRunner implements CommandLineRunner {
 
     private final ProcessXml processXml;
@@ -24,7 +26,7 @@ public class InvoiceXmlGenRunner implements CommandLineRunner {
     public void run(String... args) {
         CustomLogging.logInfo(null, null, null, "InvoiceXmlGenRunner started");
         if ("GENERATE".equals(taskType)) {
-            processXml.singleInvoice();
+            String xmlString = processXml.singleInvoice(888888880L);
         } else if ("PUBLISH".equals(taskType)) {
             streamPublisher.publishInvoiceXml();
         }

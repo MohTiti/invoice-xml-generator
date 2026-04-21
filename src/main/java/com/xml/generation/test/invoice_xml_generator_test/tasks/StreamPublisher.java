@@ -7,6 +7,7 @@ import com.xml.generation.test.invoice_xml_generator_test.repository.InvoiceRepo
 import com.xml.generation.test.invoice_xml_generator_test.utils.XmlDecoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +20,8 @@ import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
- public class StreamPublisher {
+@ConditionalOnProperty(name = "program.task-type", havingValue = "PUBLISH")
+public class StreamPublisher {
 
     private final InvoiceRepository invoiceRepository;
     private final MinioStorageService minioStorageService;
@@ -41,31 +43,29 @@ import java.util.stream.Stream;
                 invoiceCount.getAndIncrement();
                 Long invoiceId = inv.getInvoiceId();
                 try {
-                    String taxNumber     = inv.getUser().getTaxpayer().getTaxNumber();
+                    String taxNumber = inv.getUser().getTaxpayer().getTaxNumber();
                     String invoiceNumber = inv.getInvoiceNumber();
 
                     CustomLogging.logInfo(taxNumber, invoiceNumber, invoiceId,
                             "Processing invoiceId={}", invoiceId);
 
-                    LocalDate date  = inv.getIssueDate().toLocalDate();
+                    LocalDate date = inv.getIssueDate().toLocalDate();
 
-                    String issueYear  = String.valueOf(date.getYear());
+                    String issueYear = String.valueOf(date.getYear());
                     String issueMonth = date.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH));
-                    String issueDay   = String.format("%02d", date.getDayOfMonth());
+                    String issueDay = String.format("%02d", date.getDayOfMonth());
 
                     //======SAVE TO FILE
 //                    Path directory = Paths.get(folderPath, taxNumber, issueYear, issueMonth, issueDay);
 //                    Files.createDirectories(directory);
 
 
-
-                     //todo save the invoice xml file as initial
+                    //todo save the invoice xml file as initial
                     String encodedXml = "";
                     try {
-                    encodedXml= XmlDecoder.resolveXml(new String(inv.getXmlFile(), StandardCharsets.UTF_8));
+                        encodedXml = XmlDecoder.resolveXml(new String(inv.getXmlFile(), StandardCharsets.UTF_8));
 
-                    } catch (Exception e )
-                    {
+                    } catch (Exception e) {
                         CustomLogging.logError("XML_UNRESOLVABLE", invoiceId,
                                 "Skipping invoiceId={} — xml_file could not be decoded", invoiceId);
 
@@ -85,7 +85,6 @@ import java.util.stream.Stream;
                             encodedXml.getBytes(StandardCharsets.UTF_8),
                             "application/xml"
                     );
-
 
 
                     //======SAVE TO FILE
