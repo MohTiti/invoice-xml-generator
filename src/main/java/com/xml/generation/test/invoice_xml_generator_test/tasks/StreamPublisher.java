@@ -55,7 +55,7 @@ public class StreamPublisher {
 
                     //TODO add the xml generation
                     try {
-                        encodedXml = XmlDecoder.resolveXml(new String(inv.getXmlFile(), StandardCharsets.UTF_8));
+                        encodedXml = XmlDecoder.resolveXml(new String(inv.getXmlFile(), StandardCharsets.UTF_8), inv.getInvoiceId());
 
                     } catch (Exception e) {
                         CustomLogging.logError("XML_UNRESOLVABLE", invoiceId,
