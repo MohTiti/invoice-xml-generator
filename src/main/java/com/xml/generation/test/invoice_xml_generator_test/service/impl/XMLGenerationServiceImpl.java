@@ -84,7 +84,7 @@ public class XMLGenerationServiceImpl implements XMLGenerationService {
             model.put("invoiceTypeValue", "383");
         }
 
-        model.put("invoiceCounter", Integer.valueOf(invoiceDTO.getInvoiceNumber().replace("EIN", "")));
+//        model.put("invoiceCounter", Integer.valueOf(invoiceDTO.getInvoiceNumber().replace("EIN", "")));
         model.put("currencyEnum", invoiceDTO.getCurrencyEnum());
 
         if(invoiceDTO.getBuyerDTO() != null) {

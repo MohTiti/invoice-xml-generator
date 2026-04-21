@@ -8,12 +8,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 @RequiredArgsConstructor
 public class InvoiceXmlGenRunner implements CommandLineRunner {
 
     private final ProcessXml processXml;
-    private final StreamPublisher streamPublisher;
+    private final Optional<StreamPublisher> streamPublisher;
 
     @Value("${program.task-type}")
     private String taskType;
@@ -24,7 +26,7 @@ public class InvoiceXmlGenRunner implements CommandLineRunner {
         if ("GENERATE".equals(taskType)) {
             processXml.processInvoice();
         } else if ("PUBLISH".equals(taskType)) {
-            streamPublisher.publishInvoiceXml();
+            streamPublisher.ifPresent(StreamPublisher::publishInvoiceXml);
         }
         CustomLogging.logInfo(null, null, null, "InvoiceXmlGenRunner finished");
     }
