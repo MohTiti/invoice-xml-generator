@@ -2,10 +2,12 @@ package com.xml.generation.test.invoice_xml_generator_test.minio.config;
 
 import com.xml.generation.test.invoice_xml_generator_test.minio.properties.MinioProperties;
 import io.minio.MinioClient;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(name = "program.task-type", havingValue = "PUBLISH")
 public class MinioConfig {
 
     @Bean

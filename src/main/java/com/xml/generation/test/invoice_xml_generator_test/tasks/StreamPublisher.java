@@ -7,6 +7,7 @@ import com.xml.generation.test.invoice_xml_generator_test.repository.InvoiceRepo
 import com.xml.generation.test.invoice_xml_generator_test.utils.XmlDecoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "program.task-type", havingValue = "PUBLISH")
  public class StreamPublisher {
 
     private final InvoiceRepository invoiceRepository;
