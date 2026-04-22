@@ -114,6 +114,7 @@ public class XMLGenerationServiceImpl implements XMLGenerationService {
             model.put("isGeneralTax", "true");
         } else {
             model.put("isSpecialTax", "false");
+            model.put("isGeneralTax", "false");
         }
 
         if(CASH_GENERAL_TAX.equals(invoiceDTO.getInvoiceTypeCode())
