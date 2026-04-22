@@ -23,8 +23,6 @@ public class ProcessXml {
     @Value("${xml-gen.invoice-id}")
     private Long testInvoiceId;
 
-    //TODO take the INvoice Entity
-
     public void processInvoice() {
         Invoice invoice = null;
         try {

@@ -15,11 +15,12 @@ spring:
         format_sql: true
 
 program:
-  task-type: '${TASK_TYPE:PUBLISH}'
+#  task-type: '${TASK_TYPE:PUBLISH}'
+  task-type: '${TASK_TYPE:GENERATE}'
 #types :  PUBLISH, GENERATE
 
 xml-gen:
-  invoice-id: 1833496250
+  invoice-id: 1833497260
   is-staging: '${XML_GEN_IS_STAGING:false}'
 
 qr:
