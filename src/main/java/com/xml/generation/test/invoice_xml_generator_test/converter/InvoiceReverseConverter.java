@@ -184,6 +184,9 @@ public class InvoiceReverseConverter {
             if (invoice.getOriginalInvoice().getTotalPayableAmount() != null) {
                 invoiceDTO.setOriginalInvoiceTotal(invoice.getOriginalInvoice().getTotalPayableAmount());
             }
+            if (invoice.getOriginalInvoice().getInvoiceUniqueIdentifier() != null) {
+                invoiceDTO.setOriginalInvoiceUUID(invoice.getOriginalInvoice().getInvoiceUniqueIdentifier());
+            }
         }
 
         // Financial amounts with null checks

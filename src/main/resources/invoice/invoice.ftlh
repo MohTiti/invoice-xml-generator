@@ -20,7 +20,8 @@
     <cac:BillingReference>
       <cac:InvoiceDocumentReference>
         <cbc:ID>${invoiceDTO.originalInvoiceNumber}</cbc:ID>
-        <cbc:DocumentDescription>${invoiceDTO.originalInvoiceTotal?string["0.0000000"]}</cbc:DocumentDescription>
+        <cbc:UUID>${invoiceDTO.originalInvoiceUUID}</cbc:UUID>
+        <cbc:DocumentDescription>${(invoiceDTO.originalInvoiceTotal!0)?c}</cbc:DocumentDescription>
       </cac:InvoiceDocumentReference>
     </cac:BillingReference>
   </#if>
@@ -99,29 +100,29 @@
   <cac:AllowanceCharge>
     <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
     <cbc:AllowanceChargeReason>discount</cbc:AllowanceChargeReason>
-    <cbc:Amount currencyID="JO">${invoiceDTO.totalDiscountsAmount?string["0.0000000"]}</cbc:Amount>
+    <cbc:Amount currencyID="JO">${(invoiceDTO.totalDiscountsAmount!0)?c}</cbc:Amount>
   </cac:AllowanceCharge>
   <cac:TaxTotal>
-    <cbc:TaxAmount currencyID="JO">${invoiceDTO.totalGeneralTaxesAmount?string["0.##;; roundingMode=halfUp"]}</cbc:TaxAmount>
+    <cbc:TaxAmount currencyID="JO">${(invoiceDTO.totalGeneralTaxesAmount!0)?c}</cbc:TaxAmount>
   </cac:TaxTotal>
   <cac:LegalMonetaryTotal>
-    <cbc:TaxExclusiveAmount currencyID="JO">${(invoiceDTO.totalAmountExcludingTaxes)?string["0.0000000"]}</cbc:TaxExclusiveAmount>
-    <cbc:TaxInclusiveAmount currencyID="JO">${(invoiceDTO.totalPayableAmount)?string["0.0000000"]}</cbc:TaxInclusiveAmount>
-    <cbc:AllowanceTotalAmount currencyID="JO">${(invoiceDTO.totalDiscountsAmount)?string["0.0000000"]}</cbc:AllowanceTotalAmount>
-    <cbc:PayableAmount currencyID="JO">${(invoiceDTO.totalPayableAmount)?string["0.0000000"]}</cbc:PayableAmount>
+    <cbc:TaxExclusiveAmount currencyID="JO">${(invoiceDTO.totalAmountExcludingTaxes!0)?c}</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="JO">${(invoiceDTO.totalPayableAmount!0)?c}</cbc:TaxInclusiveAmount>
+    <cbc:AllowanceTotalAmount currencyID="JO">${(invoiceDTO.totalDiscountsAmount!0)?c}</cbc:AllowanceTotalAmount>
+    <cbc:PayableAmount currencyID="JO">${(invoiceDTO.totalPayableAmount!0)?c}</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
   <#list invoiceDTO.invoiceItemDTOList as invoiceItem>
     <cac:InvoiceLine>
       <cbc:ID>${invoiceItem?counter}</cbc:ID>
-      <cbc:InvoicedQuantity unitCode="PCE">${invoiceItem.quantity?string["0.000000000"]}</cbc:InvoicedQuantity>
-      <cbc:LineExtensionAmount currencyID="JO">${(invoiceItem.totalAmountAfterDiscount)?string["0.0000000"]}</cbc:LineExtensionAmount>
+      <cbc:InvoicedQuantity unitCode="PCE">${(invoiceItem.quantity!0)?c}</cbc:InvoicedQuantity>
+      <cbc:LineExtensionAmount currencyID="JO">${(invoiceItem.totalAmountAfterDiscount!0)?c}</cbc:LineExtensionAmount>
       <cac:TaxTotal>
-        <cbc:TaxAmount currencyID="JO">${invoiceItem.generalTaxAmount?string["0.0000000"]}</cbc:TaxAmount>
-        <cbc:RoundingAmount currencyID="JO">${invoiceItem.totalAmountAfterTaxes?string["0.0000000"]}</cbc:RoundingAmount>
+        <cbc:TaxAmount currencyID="JO">${(invoiceItem.generalTaxAmount!0)?c}</cbc:TaxAmount>
+        <cbc:RoundingAmount currencyID="JO">${(invoiceItem.totalAmountAfterTaxes!0)?c}</cbc:RoundingAmount>
         <#if isSpecialTax == "true">
           <cac:TaxSubtotal>
-            <cbc:TaxableAmount currencyID="JO">${invoiceItem.totalAmountAfterDiscount?string["0.0000000"]}</cbc:TaxableAmount>
-            <cbc:TaxAmount  currencyID="JO">${invoiceItem.specialTaxAmount?string["0.0000000"]}</cbc:TaxAmount>
+            <cbc:TaxableAmount currencyID="JO">${(invoiceItem.totalAmountAfterDiscount!0)?c}</cbc:TaxableAmount>
+            <cbc:TaxAmount  currencyID="JO">${(invoiceItem.specialTaxAmount!0)?c}</cbc:TaxAmount>
             <cac:TaxCategory>
               <cbc:ID schemeID="UN/ECE 5305" schemeAgencyID="6">S</cbc:ID>
               <cac:TaxScheme>
@@ -132,8 +133,8 @@
         </#if>
         <#if isGeneralTax == "true">
           <cac:TaxSubtotal>
-            <cbc:TaxableAmount currencyID="JO">${invoiceItem.totalAmountAfterDiscount?string["0.0000000"]}</cbc:TaxableAmount>
-            <cbc:TaxAmount currencyID="JO">${invoiceItem.generalTaxAmount?string["0.0000000"]}</cbc:TaxAmount>
+            <cbc:TaxableAmount currencyID="JO">${(invoiceItem.totalAmountAfterDiscount!0)?c}</cbc:TaxableAmount>
+            <cbc:TaxAmount currencyID="JO">${(invoiceItem.generalTaxAmount!0)?c}</cbc:TaxAmount>
             <cac:TaxCategory>
               <#if invoiceItem.generalTaxType == "ZERO">
                 <cbc:ID schemeID="UN/ECE 5305" schemeAgencyID="6">O</cbc:ID>
@@ -142,7 +143,7 @@
               <#else>
                 <cbc:ID schemeID="UN/ECE 5305" schemeAgencyID="6">S</cbc:ID>
               </#if>
-              <cbc:Percent>${invoiceItem.generalTaxPercentage?string["0.0000000"]}</cbc:Percent>
+              <cbc:Percent>${(invoiceItem.generalTaxPercentage!0)?c}</cbc:Percent>
               <cac:TaxScheme>
                 <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">VAT</cbc:ID>
               </cac:TaxScheme>
@@ -155,28 +156,28 @@
       </cac:Item>
       <cac:Price>
         <#if invoiceItem.invoiceItemType.name() == "PRODUCT">
-          <cbc:PriceAmount currencyID="JO">${invoiceItem.unitPrice?string["0.000000000"]}</cbc:PriceAmount>
+          <cbc:PriceAmount currencyID="JO">${(invoiceItem.unitPrice!0)?c}</cbc:PriceAmount>
         <#elseif invoiceItem.invoiceItemType.name() == "SERVICE_CHARGE">
-          <cbc:PriceAmount currencyID="JO">${invoiceItem.totalAmountAfterDiscount?string["0.000000000"]}</cbc:PriceAmount>
+          <cbc:PriceAmount currencyID="JO">${(invoiceItem.totalAmountAfterDiscount!0)?c}</cbc:PriceAmount>
         </#if>
         <#if invoiceItem.discountAmount?has_content && invoiceItem.invoiceItemType.name() == "PRODUCT">
           <cac:AllowanceCharge>
             <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
             <cbc:AllowanceChargeReason>DISCOUNT</cbc:AllowanceChargeReason>
-            <cbc:Amount currencyID="JO">${invoiceItem.discountAmount?string["0.000000000"]}</cbc:Amount>
+            <cbc:Amount currencyID="JO">${(invoiceItem.discountAmount!0)?c}</cbc:Amount>
           </cac:AllowanceCharge>
         </#if>
         <#if invoiceItem.invoiceItemType.name() == "SERVICE_CHARGE">
           <cac:AllowanceCharge>
             <cbc:ChargeIndicator>true</cbc:ChargeIndicator>
             <cbc:AllowanceChargeReason>SERVICE_CHARGE</cbc:AllowanceChargeReason>
-            <cbc:Amount currencyID="JO">${invoiceItem.totalAmountAfterDiscount?string["0.000000000"]}</cbc:Amount>
+            <cbc:Amount currencyID="JO">${(invoiceItem.totalAmountAfterDiscount!0)?c}</cbc:Amount>
           </cac:AllowanceCharge>
         </#if>
       </cac:Price>
       <#if invoiceItem.customerPrice??>
         <cac:ItemPriceExtension>
-          <cbc:Amount currencyID="JO">${invoiceItem.customerPrice?string["0.000000000"]}</cbc:Amount>
+          <cbc:Amount currencyID="JO">${(invoiceItem.customerPrice!0)?c}</cbc:Amount>
         </cac:ItemPriceExtension>
       </#if>
     </cac:InvoiceLine>
