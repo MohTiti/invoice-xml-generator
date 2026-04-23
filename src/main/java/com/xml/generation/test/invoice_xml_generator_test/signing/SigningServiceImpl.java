@@ -230,14 +230,16 @@ public class SigningServiceImpl {
                 bytesToHex(hashStringToBytes(certificateAsString.getBytes(StandardCharsets.UTF_8)))
                         .getBytes(StandardCharsets.UTF_8));
 
-        String signingTimestamp = DATE_TIME_FORMATTER.format(invoice.getCreatedDate());
+        String signingTimestamp = DATE_TIME_FORMATTER.format(
+                invoice.getCreatedDate() != null
+                        ? invoice.getCreatedDate()
+                        : invoice.getIssueDate().toLocalDate().atStartOfDay());
 
         String signedPropertiesHashing = populateSignedSignatureProperties(
                 document,
                 certificateHashing,
-                //todo to edit time of singning
                 signingTimestamp,
-                certificate.getIssuerDN().getName(),
+                certificate.getIssuerX500Principal().getName(),
                 certificate.getSerialNumber().toString());
 
         populateUBLExtensions(
@@ -324,7 +326,6 @@ public class SigningServiceImpl {
         List<Node> nodes = xpath.selectNodes(document);
         IntStream.range(0, nodes.size())
                 .mapToObj(i -> (Element) nodes.get(i))
-                //todo control qr code text saving
                 .forEach(el -> el.setText(value != null ? value : ""));
     }
 

@@ -9,13 +9,15 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "runner.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(name = "runner.enabled", havingValue = "true", matchIfMissing = true)
 public class InvoiceXmlGenRunner implements CommandLineRunner {
 
     private final ProcessXml processXml;
-    private final StreamPublisher streamPublisher;
+    private final Optional<StreamPublisher> streamPublisher;
 
     @Value("${program.task-type}")
     private String taskType;
@@ -26,9 +28,18 @@ public class InvoiceXmlGenRunner implements CommandLineRunner {
     public void run(String... args) {
         CustomLogging.logInfo(null, null, null, "InvoiceXmlGenRunner started");
         if ("GENERATE".equals(taskType)) {
-            String xmlString = processXml.singleInvoice(888888880L);
+            String xmlString = processXml.singleInvoice(1833495884L);
+            System.out.println("-------------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------------");
+            System.out.println(xmlString);
+            System.out.println("-------------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------------");
         } else if ("PUBLISH".equals(taskType)) {
-            streamPublisher.publishInvoiceXml();
+            streamPublisher.ifPresent(StreamPublisher::publishInvoiceXml);
         }
         CustomLogging.logInfo(null, null, null, "InvoiceXmlGenRunner finished");
     }
