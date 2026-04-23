@@ -3,6 +3,7 @@ package com.xml.generation.test.invoice_xml_generator_test.model.data;
 import com.xml.generation.test.invoice_xml_generator_test.model.enums.GeneralTaxType;
 import com.xml.generation.test.invoice_xml_generator_test.model.enums.InvoiceItemTypeEnum;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -72,6 +73,7 @@ public class InvoiceItem {
 
 
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "invoice_id")
     private Invoice invoice;
